@@ -1,0 +1,10 @@
+# Build directories
+.gradle/
+build/
+out/
+
+# IDEs directories
+.idea/
+
+# Local dev config
+/application.yaml
