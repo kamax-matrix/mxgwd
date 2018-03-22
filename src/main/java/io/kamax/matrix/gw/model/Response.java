@@ -18,4 +18,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.model;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class Response {
+
+    private int status;
+    private Map<String, List<String>> headers = new HashMap<>();
+    private String body;
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public Map<String, List<String>> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, List<String>> headers) {
+        this.headers = headers;
+    }
+
+    public Optional<String> getBody() {
+        return Optional.ofNullable(body);
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+}
