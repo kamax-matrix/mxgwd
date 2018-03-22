@@ -21,6 +21,7 @@
 package io.kamax.matrix.gw.model;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +30,8 @@ public class Request {
 
     private String method;
     private URL url;
-    private Map<String, List<String>> query;
-    private Map<String, List<String>> headers;
+    private Map<String, List<String>> query = new HashMap<>();
+    private Map<String, List<String>> headers = new HashMap<>();
     private String body;
 
     public String getMethod() {

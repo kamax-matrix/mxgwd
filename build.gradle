@@ -27,7 +27,8 @@ repositories {
 }
 
 dependencies {
-    compile 'org.springframework.boot:spring-boot-starter-web:2.0.0.RELEASE'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
+    compile 'io.undertow:undertow-core:1.4.12.Final'
     compile 'org.apache.httpcomponents:fluent-hc:4.5.5'
     testCompile 'junit:junit:4.12'
 }

@@ -21,7 +21,6 @@
 package io.kamax.matrix.gw.model;
 
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 public class MatrixGateway {
 
@@ -43,6 +41,7 @@ public class MatrixGateway {
 
     public Response execute(Request request) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(request.getUrl().toString());
+        b.setPort(8008);
         request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         switch (request.getMethod()) {
             case "GET":
