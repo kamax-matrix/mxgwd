@@ -20,53 +20,107 @@
 
 package io.kamax.matrix.gw.model;
 
+import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MatrixGateway {
 
-    private CloseableHttpClient client = HttpClients.custom().setUserAgent("mxgwd/0.0.0").build();
+    private final Logger log = LoggerFactory.getLogger(MatrixGateway.class);
+
+    private CloseableHttpClient client = HttpClients.custom()
+            .setUserAgent("mxgwd/0.0.0")
+            .build();
+
+    private Response execute(Request reqIn, HttpRequestBase reqOut) throws IOException {
+        reqIn.getHeaders().forEach((name, values) -> values.forEach(value -> {
+            if (StringUtils.equals(name, "Host")) {
+                return;
+            }
+
+            if (StringUtils.equals(name, "Content-Length")) {
+                return;
+            }
+
+            reqOut.addHeader(name, value);
+        }));
+        try (CloseableHttpResponse resIn = client.execute(reqOut)) {
+            Map<String, List<String>> headers = new HashMap<>();
+            for (Header header : resIn.getAllHeaders()) {
+                if (header.getName().equalsIgnoreCase("Transfer-Encoding")) {
+                    continue;
+                }
+
+                String name = header.getName();
+                String value = header.getValue();
+                if (!headers.containsKey(name)) {
+                    headers.put(name, new ArrayList<>());
+                }
+                headers.get(name).add(value);
+            }
+            Response resOut = new Response();
+            resOut.setStatus(resIn.getStatusLine().getStatusCode());
+            resOut.setHeaders(headers);
+            resOut.setBody(IOUtils.toByteArray(resIn.getEntity().getContent()));
+            return resOut;
+        }
+    }
 
     public Response execute(Request request) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(request.getUrl().toString());
         b.setPort(8008);
         request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
-        switch (request.getMethod()) {
-            case "GET":
-                HttpGet get = new HttpGet(b.build());
-                request.getHeaders().forEach((name, values) -> values.forEach(value -> get.addHeader(name, value)));
-                try (CloseableHttpResponse resIn = client.execute(get)) {
-                    Map<String, List<String>> headers = new HashMap<>();
-                    for (Header header : resIn.getAllHeaders()) {
-                        String name = header.getName();
-                        String value = header.getValue();
-                        if (!headers.containsKey(name)) {
-                            headers.put(name, new ArrayList<>());
-                        }
-                        headers.get(name).add(value);
-                    }
-                    Response resOut = new Response();
-                    resOut.setStatus(resIn.getStatusLine().getStatusCode());
-                    resOut.setHeaders(headers);
-                    resOut.setBody(EntityUtils.toString(resIn.getEntity()));
-                    return resOut;
-                }
-            default:
-                throw new RuntimeException("Unsupported method: " + request.getMethod());
+        URI uri = b.build();
 
+        HttpRequestBase proxyRequest = null;
+        // TODO map of handler?
+        switch (request.getMethod()) {
+            case "OPTIONS":
+                proxyRequest = new HttpOptions(uri);
+                break;
+            case "HEAD":
+                proxyRequest = new HttpHead(uri);
+                break;
+            case "GET":
+                proxyRequest = new HttpGet(uri);
+                break;
+            case "DELETE":
+                proxyRequest = new HttpDelete(uri);
+                break;
+            case "PATCH":
+                HttpPatch patchReq = new HttpPatch(uri);
+                patchReq.setEntity(new ByteArrayEntity(request.getBody()));
+                proxyRequest = patchReq;
+                break;
+            case "POST":
+                HttpPost postReq = new HttpPost(uri);
+                postReq.setEntity(new ByteArrayEntity(request.getBody()));
+                proxyRequest = postReq;
+                break;
+            case "PUT":
+                HttpPut putReq = new HttpPut(uri);
+                putReq.setEntity(new ByteArrayEntity(request.getBody()));
+                proxyRequest = putReq;
+                break;
         }
+
+        if (Objects.isNull(proxyRequest)) {
+            throw new RuntimeException("Unsupported method: " + request.getMethod());
+        }
+
+        return execute(request, proxyRequest);
     }
 
 }

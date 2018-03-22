@@ -29,7 +29,7 @@ public class Response {
 
     private int status;
     private Map<String, List<String>> headers = new HashMap<>();
-    private String body;
+    private byte[] body;
 
     public int getStatus() {
         return status;
@@ -47,11 +47,11 @@ public class Response {
         this.headers = headers;
     }
 
-    public Optional<String> getBody() {
+    public Optional<byte[]> getBody() {
         return Optional.ofNullable(body);
     }
 
-    public void setBody(String body) {
+    public void setBody(byte[] body) {
         this.body = body;
     }
 

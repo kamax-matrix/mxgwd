@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 public class MatrixGatewayApp {
@@ -46,27 +47,45 @@ public class MatrixGatewayApp {
                 .addHttpListener(httpPort, "0.0.0.0")
                 .setHandler(Handlers.path()
                         .addPrefixPath("/", exchange -> {
+                            URL url = new URL(exchange.getRequestURL());
+                            log.info("Handling {}", url);
                             Map<String, List<String>> headers = new HashMap<>();
                             exchange.getRequestHeaders().forEach(h -> {
                                 headers.put(h.getHeaderName().toString(), Arrays.asList(h.toArray()));
                             });
 
-                            Request reqOut = new Request();
-                            reqOut.setMethod(exchange.getRequestMethod().toString());
-                            reqOut.setUrl(new URL(exchange.getRequestURL()));
-                            reqOut.setHeaders(headers);
-                            //reqOut.setQuery(parameters);
-
-                            Response resIn = gw.execute(reqOut);
-                            exchange.setStatusCode(resIn.getStatus());
-                            resIn.getHeaders().forEach((k, v) -> v.forEach(vv -> exchange.getResponseHeaders().add(new HttpString(k), vv)));
-                            resIn.getBody().ifPresent(body -> {
-                                exchange.setResponseContentLength(body.length());
-                                exchange.getResponseSender().send(body);
-                                exchange.endExchange();
+                            Map<String, List<String>> parameters = new HashMap<>();
+                            exchange.getQueryParameters().forEach((k, v) -> {
+                                parameters.put(k, new ArrayList<>(v));
                             });
-                        })
-                ).build();
+
+                            exchange.getRequestReceiver().receiveFullBytes((exchange1, message) -> {
+                                Request reqOut = new Request();
+                                reqOut.setMethod(exchange1.getRequestMethod().toString());
+                                reqOut.setUrl(url);
+                                reqOut.setHeaders(headers);
+                                reqOut.setQuery(parameters);
+                                if (message.length > 0) {
+                                    reqOut.setBody(message);
+                                }
+
+                                try {
+                                    Response resIn = gw.execute(reqOut);
+                                    exchange1.setStatusCode(resIn.getStatus());
+                                    resIn.getHeaders().forEach((k, v) -> {
+                                        v.forEach(vv -> exchange1.getResponseHeaders().add(HttpString.tryFromString(k), vv));
+                                    });
+                                    resIn.getBody().ifPresent(body -> {
+                                        exchange1.setResponseContentLength(body.length);
+                                        exchange1.getResponseSender().send(ByteBuffer.wrap(body));
+                                    });
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                } finally {
+                                    exchange1.endExchange();
+                                }
+                            });
+                        })).build();
 
         server.start();
     }

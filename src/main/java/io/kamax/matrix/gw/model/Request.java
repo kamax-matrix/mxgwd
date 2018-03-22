@@ -27,12 +27,11 @@ import java.util.Map;
 
 public class Request {
 
-
     private String method;
     private URL url;
     private Map<String, List<String>> query = new HashMap<>();
     private Map<String, List<String>> headers = new HashMap<>();
-    private String body;
+    private byte[] body;
 
     public String getMethod() {
         return method;
@@ -66,11 +65,11 @@ public class Request {
         this.headers = headers;
     }
 
-    public String getBody() {
+    public byte[] getBody() {
         return body;
     }
 
-    public void setBody(String body) {
+    public void setBody(byte[] body) {
         this.body = body;
     }
 
