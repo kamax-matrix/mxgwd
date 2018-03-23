@@ -20,12 +20,25 @@
 
 package io.kamax.matrix.gw.model;
 
+import com.google.gson.JsonObject;
+import io.kamax.matrix.json.GsonUtil;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class Response {
+
+    public static Response rejectByPolicy() {
+        JsonObject body = new JsonObject();
+        body.addProperty("errcode", "M_FORBIDDEN");
+        body.addProperty("error", "Not allowed by policy");
+        Response resOut = new Response();
+        resOut.setStatus(403);
+        resOut.setBody(GsonUtil.get().toJson(body).getBytes());
+        return resOut;
+    }
 
     private int status;
     private Map<String, List<String>> headers = new HashMap<>();

@@ -23,6 +23,7 @@ package io.kamax.matrix.gw.model;
 import io.kamax.matrix.gw.config.Config;
 import io.kamax.matrix.gw.config.matrix.AclType;
 import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
 import io.kamax.matrix.gw.config.matrix.MatrixHost;
 import io.kamax.matrix.json.GsonUtil;
 import org.apache.commons.io.IOUtils;
@@ -91,46 +92,51 @@ public class Gateway {
         }
     }
 
+    private boolean isAllowed(Request request, String hostname, MatrixHost mxHost) {
+        for (MatrixEndpoint endpoint : mxHost.getEndpoints()) {
+            boolean pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+            boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
+            boolean methodMatch = StringUtils.equals(endpoint.getMethod(), request.getMethod());
+
+            if (!pathMatch || (!methodBlank && !methodMatch)) {
+                continue;
+            }
+
+            for (MatrixAcl acl : endpoint.getAcls()) {
+                if (StringUtils.equals("method", acl.getTarget())) {
+                    boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
+
+                    if (AclType.Blacklist.is(acl) && isMethod)
+                        return false;
+
+                    if (AclType.Whitelist.is(acl) && !isMethod)
+                        return false;
+                } else {
+                    throw new RuntimeException("Unsupported ACL target " + acl.getTarget() + " for " + hostname + endpoint.getPath());
+                }
+            }
+        }
+
+        return Objects.nonNull(mxHost.getTo());
+    }
+
     public Response execute(Request request) throws URISyntaxException, IOException {
         URL url = request.getUrl();
         String host = url.getHost() + (url.getPort() != -1 ? ":" + url.getPort() : "");
         URIBuilder b = new URIBuilder(request.getUrl().toString());
 
         MatrixHost mxHost = Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(host)).orElseThrow(RuntimeException::new);
-        mxHost.getEndpoints().forEach(e -> {
-            boolean pathMatch = StringUtils.startsWith(url.getPath(), e.getPath());
-            boolean methodBlank = StringUtils.isBlank(e.getMethod());
-            boolean methodMatch = StringUtils.equals(e.getMethod(), request.getMethod());
-
-            if (!pathMatch) {
-                return;
-            }
-
-            if (!methodBlank && !methodMatch) {
-                return;
-            }
-
-            for (MatrixAcl acl : e.getAcls()) {
-                if (StringUtils.equals("method", acl.getTarget())) {
-                    boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
-
-                    if (AclType.Blacklist.is(acl) && isMethod)
-                        throw new SecurityException("Not allowed by policy");
-
-                    if (AclType.Whitelist.is(acl) && !isMethod)
-                        throw new SecurityException("Not allowed by policy");
-                } else {
-                    throw new RuntimeException("Unsupported ACL target " + acl.getTarget() + " for " + host + e.getPath());
-                }
-            }
-        });
-
         b.setScheme(mxHost.getTo().getProtocol());
         b.setHost(mxHost.getTo().getHost());
         if (mxHost.getTo().getPort() != -1) {
             b.setPort(mxHost.getTo().getPort());
         }
-        log.info("Proxy {} {} to {} {}", request.getMethod(), request.getUrl().toString(), request.getMethod(), b.toString());
+
+        if (!isAllowed(request, host, mxHost)) {
+            log.info("Reject {} {}", request.getMethod(), request.getUrl());
+            return Response.rejectByPolicy();
+        }
+        log.info("Allow {} {} to {} {}", request.getMethod(), request.getUrl(), request.getMethod(), b);
 
         request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         URI uri = b.build();

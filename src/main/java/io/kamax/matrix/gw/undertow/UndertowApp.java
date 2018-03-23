@@ -82,9 +82,6 @@ public class UndertowApp {
                                                 exchange1.setResponseContentLength(body.length);
                                                 exchange1.getResponseSender().send(ByteBuffer.wrap(body));
                                             });
-                                        } catch (SecurityException e) {
-                                            exchange.setStatusCode(403);
-                                            exchange.getResponseSender().send(e.getMessage()); // FIXME send JSON
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
                                         }
