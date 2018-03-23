@@ -18,21 +18,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-group = 'io.kamax'
+package io.kamax.matrix.gw.config.matrix;
 
-apply plugin: 'java'
+import io.kamax.matrix.gw.config.Value;
 
-repositories {
-    maven { url 'https://kamax.io/maven/releases' }
-    jcenter()
-}
+public class Matrix {
 
-dependencies {
-    compile 'org.slf4j:slf4j-simple:1.7.25'
-    compile 'commons-io:commons-io:2.6'
-    compile 'org.yaml:snakeyaml:1.20'
-    compile 'io.undertow:undertow-core:1.4.12.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8'
+    private MatrixClient client;
 
-    testCompile 'junit:junit:4.12'
+    public MatrixClient getClient() {
+        return Value.get(client, MatrixClient::new);
+    }
+
+    public void setClient(MatrixClient client) {
+        this.client = client;
+    }
+
 }

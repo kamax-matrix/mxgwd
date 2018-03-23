@@ -18,21 +18,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-group = 'io.kamax'
+package io.kamax.matrix.gw.config.matrix;
 
-apply plugin: 'java'
+public class MatrixAcl {
 
-repositories {
-    maven { url 'https://kamax.io/maven/releases' }
-    jcenter()
-}
+    private String type;
+    private String target;
+    private String value;
 
-dependencies {
-    compile 'org.slf4j:slf4j-simple:1.7.25'
-    compile 'commons-io:commons-io:2.6'
-    compile 'org.yaml:snakeyaml:1.20'
-    compile 'io.undertow:undertow-core:1.4.12.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8'
+    public String getType() {
+        return type;
+    }
 
-    testCompile 'junit:junit:4.12'
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
 }

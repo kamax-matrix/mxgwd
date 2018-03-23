@@ -20,8 +20,13 @@
 
 package io.kamax.matrix.gw.model;
 
-import org.apache.commons.codec.binary.StringUtils;
+import io.kamax.matrix.gw.config.Config;
+import io.kamax.matrix.gw.config.matrix.AclType;
+import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixHost;
+import io.kamax.matrix.json.GsonUtil;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -34,15 +39,23 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 
-public class MatrixGateway {
+public class Gateway {
 
-    private final Logger log = LoggerFactory.getLogger(MatrixGateway.class);
+    private final Logger log = LoggerFactory.getLogger(Gateway.class);
 
-    private CloseableHttpClient client = HttpClients.custom()
-            .setUserAgent("mxgwd/0.0.0")
-            .build();
+    private Config cfg;
+    private CloseableHttpClient client;
+
+    public Gateway(Config cfg) {
+        this.cfg = cfg;
+        log.info("Config: {}", GsonUtil.getPrettyForLog(cfg));
+        client = HttpClients.custom()
+                .setUserAgent("mxgwd/0.0.0") //FIXME use git
+                .build();
+    }
 
     private Response execute(Request reqIn, HttpRequestBase reqOut) throws IOException {
         reqIn.getHeaders().forEach((name, values) -> values.forEach(value -> {
@@ -79,13 +92,51 @@ public class MatrixGateway {
     }
 
     public Response execute(Request request) throws URISyntaxException, IOException {
+        URL url = request.getUrl();
+        String host = url.getHost() + (url.getPort() != -1 ? ":" + url.getPort() : "");
         URIBuilder b = new URIBuilder(request.getUrl().toString());
-        b.setPort(8008);
+
+        MatrixHost mxHost = Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(host)).orElseThrow(RuntimeException::new);
+        mxHost.getEndpoints().forEach(e -> {
+            boolean pathMatch = StringUtils.startsWith(url.getPath(), e.getPath());
+            boolean methodBlank = StringUtils.isBlank(e.getMethod());
+            boolean methodMatch = StringUtils.equals(e.getMethod(), request.getMethod());
+
+            if (!pathMatch) {
+                return;
+            }
+
+            if (!methodBlank && !methodMatch) {
+                return;
+            }
+
+            for (MatrixAcl acl : e.getAcls()) {
+                if (StringUtils.equals("method", acl.getTarget())) {
+                    boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
+
+                    if (AclType.Blacklist.is(acl) && isMethod)
+                        throw new SecurityException("Not allowed by policy");
+
+                    if (AclType.Whitelist.is(acl) && !isMethod)
+                        throw new SecurityException("Not allowed by policy");
+                } else {
+                    throw new RuntimeException("Unsupported ACL target " + acl.getTarget() + " for " + host + e.getPath());
+                }
+            }
+        });
+
+        b.setScheme(mxHost.getTo().getProtocol());
+        b.setHost(mxHost.getTo().getHost());
+        if (mxHost.getTo().getPort() != -1) {
+            b.setPort(mxHost.getTo().getPort());
+        }
+        log.info("Proxy {} {} to {} {}", request.getMethod(), request.getUrl().toString(), request.getMethod(), b.toString());
+
         request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         URI uri = b.build();
 
         HttpRequestBase proxyRequest = null;
-        // TODO map of handler?
+        // FIXME map of handler?
         switch (request.getMethod()) {
             case "OPTIONS":
                 proxyRequest = new HttpOptions(uri);

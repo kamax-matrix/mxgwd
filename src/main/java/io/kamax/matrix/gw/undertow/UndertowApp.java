@@ -18,9 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw;
+package io.kamax.matrix.gw.undertow;
 
-import io.kamax.matrix.gw.model.MatrixGateway;
+import io.kamax.matrix.gw.config.Config;
+import io.kamax.matrix.gw.config.Value;
+import io.kamax.matrix.gw.config.yaml.YamlConfigLoader;
+import io.kamax.matrix.gw.model.Gateway;
 import io.kamax.matrix.gw.model.Request;
 import io.kamax.matrix.gw.model.Response;
 import io.undertow.Handlers;
@@ -29,28 +32,26 @@ import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-public class MatrixGatewayApp {
+public class UndertowApp {
 
-    private final static Logger log = LoggerFactory.getLogger(MatrixGatewayApp.class);
+    private final static Logger log = LoggerFactory.getLogger(UndertowApp.class);
 
-    public static void main(String[] args) {
-        MatrixGateway gw = new MatrixGateway();
-        int httpPort = Optional.ofNullable(System.getenv("UNDERTOW_HTTP_PORT"))
-                .map(Integer::parseInt)
-                .orElse(8009);
+    public static void main(String[] args) throws IOException {
+        Config cfg = Value.get(YamlConfigLoader.loadFromFile("mxgwd.yaml"), Config::new);
+        Gateway gw = new Gateway(cfg);
 
         Undertow server = Undertow.builder()
-                .addHttpListener(httpPort, "0.0.0.0")
+                .addHttpListener(cfg.getServer().getPort(), "0.0.0.0")
                 .setHandler(Handlers.path()
                         .addPrefixPath("/", exchange -> {
                             exchange.dispatch(() -> {
                                 try {
                                     URL url = new URL(exchange.getRequestURL());
-                                    log.info("Handling {}", url);
                                     Map<String, List<String>> headers = new HashMap<>();
                                     exchange.getRequestHeaders().forEach(h -> {
                                         headers.put(h.getHeaderName().toString(), Arrays.asList(h.toArray()));
@@ -81,15 +82,19 @@ public class MatrixGatewayApp {
                                                 exchange1.setResponseContentLength(body.length);
                                                 exchange1.getResponseSender().send(ByteBuffer.wrap(body));
                                             });
+                                        } catch (SecurityException e) {
+                                            exchange.setStatusCode(403);
+                                            exchange.getResponseSender().send(e.getMessage()); // FIXME send JSON
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
-                                        } finally {
-                                            exchange1.endExchange();
                                         }
                                     });
                                 } catch (Exception e) {
+                                    e.printStackTrace();
                                     exchange.setStatusCode(500);
                                     exchange.getResponseSender().send("Internal Server Error");
+                                } finally {
+                                    exchange.endExchange();
                                 }
                             });
                         })).build();

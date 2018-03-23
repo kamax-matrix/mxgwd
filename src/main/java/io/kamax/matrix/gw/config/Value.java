@@ -18,21 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-group = 'io.kamax'
+package io.kamax.matrix.gw.config;
 
-apply plugin: 'java'
+import java.util.Objects;
+import java.util.function.Supplier;
 
-repositories {
-    maven { url 'https://kamax.io/maven/releases' }
-    jcenter()
-}
+public class Value {
 
-dependencies {
-    compile 'org.slf4j:slf4j-simple:1.7.25'
-    compile 'commons-io:commons-io:2.6'
-    compile 'org.yaml:snakeyaml:1.20'
-    compile 'io.undertow:undertow-core:1.4.12.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8'
+    private Value() {
+        // no instance
+    }
 
-    testCompile 'junit:junit:4.12'
+    public static <T> T get(T value, Supplier<T> supplier) {
+        return Objects.isNull(value) ? supplier.get() : value;
+    }
+
+    public static int get(Integer value, int fallback) {
+        return Objects.isNull(value) ? fallback : value;
+    }
+
+    public static String get(String value, String fallback) {
+        return Objects.isNull(value) ? fallback : value;
+    }
+
 }

@@ -5,3 +5,6 @@ out/
 
 # IDEs directories
 .idea/
+
+# Config
+mxgwd.yaml
