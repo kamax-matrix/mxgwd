@@ -18,42 +18,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model;
 
-import io.kamax.matrix.gw.config.Value;
+import io.kamax.matrix.gw.model.acl.AclTargetHandler;
+import io.kamax.matrix.gw.model.acl.GroupTargetHandler;
+import io.kamax.matrix.gw.model.acl.MethodTargetHandler;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-public class MatrixHost {
+public class AclTargetHandlerMapper {
 
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
+    private Map<String, AclTargetHandler> handlers;
 
-    public URL getTo() {
-        return to;
+    public AclTargetHandlerMapper() {
+        handlers = new HashMap<>();
+        handlers.put("method", new MethodTargetHandler());
+        handlers.put("group", new GroupTargetHandler());
     }
 
-    public void setTo(URL to) {
-        this.to = to;
-    }
-
-    public URL getToIdentity() {
-        return toIdentity;
-    }
-
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
-    }
-
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
-    }
-
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public Optional<AclTargetHandler> map(String id) {
+        return Optional.ofNullable(handlers.get(id));
     }
 
 }

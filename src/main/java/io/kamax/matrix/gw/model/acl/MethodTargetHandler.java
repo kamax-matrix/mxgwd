@@ -18,42 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model.acl;
 
-import io.kamax.matrix.gw.config.Value;
+import io.kamax.matrix.gw.config.matrix.AclType;
+import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
+import io.kamax.matrix.gw.config.matrix.MatrixHost;
+import io.kamax.matrix.gw.model.Request;
+import org.apache.commons.lang3.StringUtils;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+public class MethodTargetHandler implements AclTargetHandler {
 
-public class MatrixHost {
+    public boolean isAllowed(Request request, String hostname, MatrixHost mxHost, MatrixEndpoint endpoint, MatrixAcl acl) {
+        boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
 
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
+        if (AclType.Blacklist.is(acl) && isMethod)
+            return false;
 
-    public URL getTo() {
-        return to;
-    }
+        if (AclType.Whitelist.is(acl) && !isMethod)
+            return false;
 
-    public void setTo(URL to) {
-        this.to = to;
-    }
-
-    public URL getToIdentity() {
-        return toIdentity;
-    }
-
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
-    }
-
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
-    }
-
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+        return true;
     }
 
 }

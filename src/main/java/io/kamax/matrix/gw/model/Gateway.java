@@ -21,11 +21,10 @@
 package io.kamax.matrix.gw.model;
 
 import io.kamax.matrix.gw.config.Config;
-import io.kamax.matrix.gw.config.matrix.AclType;
 import io.kamax.matrix.gw.config.matrix.MatrixAcl;
 import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
 import io.kamax.matrix.gw.config.matrix.MatrixHost;
-import io.kamax.matrix.json.GsonUtil;
+import io.kamax.matrix.gw.model.acl.AclTargetHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -42,20 +41,84 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Gateway {
 
     private final Logger log = LoggerFactory.getLogger(Gateway.class);
 
     private Config cfg;
+
+    private ActionMapper actionMapper;
+    private AclTargetHandlerMapper aclTargetMapper;
+
     private CloseableHttpClient client;
 
     public Gateway(Config cfg) {
         this.cfg = cfg;
-        log.info("Config: {}", GsonUtil.getPrettyForLog(cfg));
+
+        actionMapper = new ActionMapper(); // TODO make configurable
+        aclTargetMapper = new AclTargetHandlerMapper(); // TODO make configurable
         client = HttpClients.custom()
-                .setUserAgent("mxgwd/0.0.0") //FIXME use git
+                .setUserAgent("mxgwd/0.0.0") // FIXME use git
                 .build();
+
+        processConfig();
+    }
+
+    private void processConfig() {
+        log.info("Config: Processing");
+        for (String hostName : cfg.getMatrix().getClient().getHosts().keySet()) {
+            MatrixHost host = cfg.getMatrix().getClient().getHosts().get(hostName);
+            log.info("Host {}: Processing", hostName);
+            for (MatrixEndpoint endpoint : host.getEndpoints()) {
+                for (MatrixAcl acl : endpoint.getAcls()) {
+                    if (!aclTargetMapper.map(acl.getTarget()).isPresent()) {
+                        throw new RuntimeException("Unknown ACL target type: " + acl.getTarget());
+                    }
+                }
+
+                if (StringUtils.isNotBlank(endpoint.getAction())) {
+                    MethodPath mp = actionMapper.map(endpoint.getAction()).orElseThrow(() -> new RuntimeException("Unknown action " + endpoint.getAction()));
+                    log.info("Endpoint: {} to {}:{}", endpoint.getAction(), mp.getMethod(), mp.getPath());
+
+                    endpoint.setMethod(mp.getMethod());
+                    endpoint.setPath(mp.getPath());
+                }
+            }
+        }
+    }
+
+    private AclTargetHandler getAclTargetHandler(String id) {
+        return aclTargetMapper.map(id).orElseThrow(() -> new RuntimeException("Unknown ACL target type: " + id));
+    }
+
+    private Optional<MatrixHost> findHostFor(URL url) {
+        return Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(url.getAuthority()));
+    }
+
+    private Optional<String> findAccessTokenInHeaders(Request request) {
+        return request.getHeaders().entrySet().stream()
+                .filter(e -> StringUtils.equals("Authorization", e.getKey()))
+                .map(Map.Entry::getValue)
+                .flatMap(Collection::stream)
+                .filter(v -> StringUtils.startsWith("Bearer ", v))
+                .map(v -> v.substring("Bearer ".length()))
+                .findAny();
+    }
+
+    private Optional<String> findAccessTokenInQuery(Request request) {
+        return request.getQuery().entrySet().stream()
+                .map(Map.Entry::getValue)
+                .flatMap(Collection::stream)
+                .findAny();
+    }
+
+    private Optional<String> findAccessToken(Request request) {
+        return Stream.of(findAccessTokenInHeaders(request), findAccessTokenInQuery(request)) // FIXME do lazy loading
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
     }
 
     private Response execute(Request reqIn, HttpRequestBase reqOut) throws IOException {
@@ -103,16 +166,14 @@ public class Gateway {
             }
 
             for (MatrixAcl acl : endpoint.getAcls()) {
-                if (StringUtils.equals("method", acl.getTarget())) {
-                    boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
-
-                    if (AclType.Blacklist.is(acl) && isMethod)
-                        return false;
-
-                    if (AclType.Whitelist.is(acl) && !isMethod)
-                        return false;
-                } else {
-                    throw new RuntimeException("Unsupported ACL target " + acl.getTarget() + " for " + hostname + endpoint.getPath());
+                if (!getAclTargetHandler(acl.getTarget()).isAllowed(
+                        request,
+                        hostname,
+                        mxHost,
+                        endpoint,
+                        acl
+                )) {
+                    return false;
                 }
             }
         }
@@ -121,23 +182,28 @@ public class Gateway {
     }
 
     public Response execute(Request request) throws URISyntaxException, IOException {
-        URL url = request.getUrl();
-        String host = url.getHost() + (url.getPort() != -1 ? ":" + url.getPort() : "");
-        URIBuilder b = new URIBuilder(request.getUrl().toString());
+        // We find if the host has been configured (and so, allowed)
+        MatrixHost mxHost = findHostFor(request.getUrl()).orElseThrow(RuntimeException::new);
 
-        MatrixHost mxHost = Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(host)).orElseThrow(RuntimeException::new);
+        // We build the security context; finding out if the caller is authenticated, its identity, the roles it has
+        Context context = new Context();
+        findAccessToken(request).ifPresent(context::setAccessToken);
+
+        // We build the exchange object, bundling all the data so far
+        Exchange ex = new Exchange(request, new Context(), request.getUrl().getAuthority(), mxHost);
+
+        if (!isAllowed(request, request.getRoot(), mxHost)) {
+            log.info("Reject {}:{}", request.getMethod(), request.getUrl());
+            return Response.rejectByPolicy();
+        }
+        log.info("Allow {}:{}", request.getMethod(), request.getUrl().toString());
+
+        URIBuilder b = new URIBuilder(request.getUrl().toString());
         b.setScheme(mxHost.getTo().getProtocol());
         b.setHost(mxHost.getTo().getHost());
         if (mxHost.getTo().getPort() != -1) {
             b.setPort(mxHost.getTo().getPort());
         }
-
-        if (!isAllowed(request, host, mxHost)) {
-            log.info("Reject {} {}", request.getMethod(), request.getUrl());
-            return Response.rejectByPolicy();
-        }
-        log.info("Allow {} {} to {} {}", request.getMethod(), request.getUrl(), request.getMethod(), b);
-
         request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         URI uri = b.build();
 

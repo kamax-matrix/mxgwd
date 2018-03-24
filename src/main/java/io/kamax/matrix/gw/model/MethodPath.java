@@ -18,42 +18,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model;
 
-import io.kamax.matrix.gw.config.Value;
+public class MethodPath {
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+    private String method;
+    private String path;
 
-public class MatrixHost {
-
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
-
-    public URL getTo() {
-        return to;
+    public MethodPath(String method, String path) {
+        this.method = method;
+        this.path = path;
     }
 
-    public void setTo(URL to) {
-        this.to = to;
+    public String getMethod() {
+        return method;
     }
 
-    public URL getToIdentity() {
-        return toIdentity;
-    }
-
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
-    }
-
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
-    }
-
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public String getPath() {
+        return path;
     }
 
 }

@@ -18,42 +18,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model.acl;
 
-import io.kamax.matrix.gw.config.Value;
+import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
+import io.kamax.matrix.gw.config.matrix.MatrixHost;
+import io.kamax.matrix.gw.model.Request;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+public interface AclTargetHandler {
 
-public class MatrixHost {
-
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
-
-    public URL getTo() {
-        return to;
-    }
-
-    public void setTo(URL to) {
-        this.to = to;
-    }
-
-    public URL getToIdentity() {
-        return toIdentity;
-    }
-
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
-    }
-
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
-    }
-
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
-    }
+    boolean isAllowed(Request request, String hostname, MatrixHost mxHost, MatrixEndpoint endpoint, MatrixAcl acl);
 
 }

@@ -18,42 +18,50 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model;
 
-import io.kamax.matrix.gw.config.Value;
+import io.kamax.matrix._MatrixID;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MatrixHost {
+public class Context {
 
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
+    private boolean authenticated;
+    private String accessToken;
+    private _MatrixID userId;
+    private List<String> roles = new ArrayList<>();
 
-    public URL getTo() {
-        return to;
+    public boolean isAuthenticated() {
+        return authenticated;
     }
 
-    public void setTo(URL to) {
-        this.to = to;
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
     }
 
-    public URL getToIdentity() {
-        return toIdentity;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
+    public _MatrixID getUserId() {
+        return userId;
     }
 
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public void setUserId(_MatrixID userId) {
+        this.userId = userId;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 
 }

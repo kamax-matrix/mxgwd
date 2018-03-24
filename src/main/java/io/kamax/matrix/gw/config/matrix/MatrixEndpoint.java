@@ -29,6 +29,7 @@ public class MatrixEndpoint {
 
     private String method;
     private String path;
+    private String action;
     private String to;
     private List<MatrixAcl> acls;
 
@@ -46,6 +47,14 @@ public class MatrixEndpoint {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public String getTo() {

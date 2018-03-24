@@ -18,42 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.matrix.gw.config.matrix;
+package io.kamax.matrix.gw.model;
 
-import io.kamax.matrix.gw.config.Value;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+public class ActionMapper {
 
-public class MatrixHost {
+    private Map<String, MethodPath> actions;
 
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
-
-    public URL getTo() {
-        return to;
+    public ActionMapper() {
+        actions = new HashMap<>();
+        actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
     }
 
-    public void setTo(URL to) {
-        this.to = to;
-    }
-
-    public URL getToIdentity() {
-        return toIdentity;
-    }
-
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
-    }
-
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
-    }
-
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public Optional<MethodPath> map(String action) {
+        return Optional.ofNullable(actions.get(action));
     }
 
 }

@@ -29,6 +29,7 @@ public class Request {
 
     private String method;
     private URL url;
+    private String root;
     private Map<String, List<String>> query = new HashMap<>();
     private Map<String, List<String>> headers = new HashMap<>();
     private byte[] body;
@@ -47,6 +48,11 @@ public class Request {
 
     public void setUrl(URL url) {
         this.url = url;
+        this.root = url.getProtocol() + "://" + url.getAuthority();
+    }
+
+    public String getRoot() {
+        return root;
     }
 
     public Map<String, List<String>> getQuery() {
