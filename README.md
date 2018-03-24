@@ -102,11 +102,11 @@ Typical configuration would look like:
 ```
 <VirtualHost *:443>
     ServerName example.org
-    
     ...
     
     ProxyPreserveHost on
     ...
+    
     ProxyPass /_matrix http://localhost:8007/_matrix
 </VirtualHost>
 ```
@@ -222,7 +222,7 @@ All other requests to `synapse.localhost` will be allowed.
 All other requests to any other host will be denied.
 
 ### Run
-```sh
+```bash
 ./gradlew shadowJar
 java -jar build/libs/matrix-gateway-all.jar
 ```
