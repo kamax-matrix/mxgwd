@@ -18,9 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-group = 'io.kamax'
-
 apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'io.kamax'
+mainClassName = 'io.kamax.matrix.gw.undertow.UndertowApp'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.3'
+    }
+}
+
 
 repositories {
     maven { url 'https://kamax.io/maven/releases' }
