@@ -20,11 +20,14 @@
 
 package io.kamax.matrix.gw.model;
 
+import com.google.gson.JsonObject;
+import io.kamax.matrix.MatrixID;
 import io.kamax.matrix.gw.config.Config;
 import io.kamax.matrix.gw.config.matrix.MatrixAcl;
 import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
 import io.kamax.matrix.gw.config.matrix.MatrixHost;
 import io.kamax.matrix.gw.model.acl.AclTargetHandler;
+import io.kamax.matrix.json.GsonUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -33,13 +36,17 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -60,6 +67,8 @@ public class Gateway {
         actionMapper = new ActionMapper(); // TODO make configurable
         aclTargetMapper = new AclTargetHandlerMapper(); // TODO make configurable
         client = HttpClients.custom()
+                .setMaxConnPerRoute(Integer.MAX_VALUE) // TODO make configurable
+                .setMaxConnTotal(Integer.MAX_VALUE) // TODO make configurable
                 .setUserAgent("mxgwd/0.0.0") // FIXME use git
                 .build();
 
@@ -121,6 +130,22 @@ public class Gateway {
                 .findFirst();
     }
 
+    private URI buildUri(URL root, String path) {
+        try {
+            return new URIBuilder(root.toURI()).setPath(path).build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String urlEncode(String v) {
+        try {
+            return URLEncoder.encode(v, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Response execute(Request reqIn, HttpRequestBase reqOut) throws IOException {
         reqIn.getHeaders().forEach((name, values) -> values.forEach(value -> {
             if (StringUtils.equals(name, "Host")) {
@@ -155,11 +180,11 @@ public class Gateway {
         }
     }
 
-    private boolean isAllowed(Request request, String hostname, MatrixHost mxHost) {
-        for (MatrixEndpoint endpoint : mxHost.getEndpoints()) {
-            boolean pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+    private boolean isAllowed(Exchange ex) {
+        for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
+            boolean pathMatch = StringUtils.startsWith(ex.getRequest().getUrl().getPath(), endpoint.getPath());
             boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
-            boolean methodMatch = StringUtils.equals(endpoint.getMethod(), request.getMethod());
+            boolean methodMatch = StringUtils.equals(endpoint.getMethod(), ex.getRequest().getMethod());
 
             if (!pathMatch || (!methodBlank && !methodMatch)) {
                 continue;
@@ -167,9 +192,7 @@ public class Gateway {
 
             for (MatrixAcl acl : endpoint.getAcls()) {
                 if (!getAclTargetHandler(acl.getTarget()).isAllowed(
-                        request,
-                        hostname,
-                        mxHost,
+                        ex,
                         endpoint,
                         acl
                 )) {
@@ -178,21 +201,57 @@ public class Gateway {
             }
         }
 
-        return Objects.nonNull(mxHost.getTo());
+        return Objects.nonNull(ex.getHost().getTo());
     }
 
     public Response execute(Request request) throws URISyntaxException, IOException {
+        log.info("Handle {}:{}", request.getMethod(), request.getUrl());
         // We find if the host has been configured (and so, allowed)
         MatrixHost mxHost = findHostFor(request.getUrl()).orElseThrow(RuntimeException::new);
 
         // We build the security context; finding out if the caller is authenticated, its identity, the roles it has
         Context context = new Context();
-        findAccessToken(request).ifPresent(context::setAccessToken);
+        findAccessToken(request).ifPresent(token -> {
+            context.setAccessToken(token);
+
+            // We discover who we are
+            HttpGet whoamiReq = new HttpGet(buildUri(mxHost.getTo(), "/_matrix/client/r0/account/whoami"));
+            whoamiReq.addHeader("Authorization", "Bearer " + token);
+            try (CloseableHttpResponse whoamiRes = client.execute(whoamiReq)) {
+                context.setAuthenticated(whoamiRes.getStatusLine().getStatusCode() == 200);
+                if (!context.isAuthenticated()) {
+                    log.info("Access token is not valid");
+                    return;
+                }
+
+                String body = EntityUtils.toString(whoamiRes.getEntity());
+                String uId = GsonUtil.getStringOrThrow(GsonUtil.parseObj(body), "user_id");
+                log.info("User: {}", uId);
+                context.setUser(MatrixID.asAcceptable(uId));
+
+                if (Objects.nonNull(mxHost.getToIdentity())) {
+                    HttpGet groupsReq = new HttpGet(buildUri(mxHost.getToIdentity(), "/_matrix-internal/profile/v1/" + urlEncode(uId)));
+                    try (CloseableHttpResponse groupsRes = client.execute(groupsReq)) {
+                        if (groupsRes.getStatusLine().getStatusCode() != 200) {
+                            throw new RuntimeException("Unable to fetch user's data");
+                        }
+
+                        JsonObject groupsBody = GsonUtil.parseObj(EntityUtils.toString(groupsRes.getEntity()));
+                        GsonUtil.findArray(groupsBody, "roles").ifPresent(arr -> {
+                            context.setRoles(GsonUtil.asList(arr, String.class));
+                        });
+                        log.info("Roles: {}", GsonUtil.get().toJson(context.getRoles().orElse(Collections.emptyList())));
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to fetch user's data", e);
+            }
+        });
 
         // We build the exchange object, bundling all the data so far
-        Exchange ex = new Exchange(request, new Context(), request.getUrl().getAuthority(), mxHost);
+        Exchange ex = new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
 
-        if (!isAllowed(request, request.getRoot(), mxHost)) {
+        if (!isAllowed(ex)) {
             log.info("Reject {}:{}", request.getMethod(), request.getUrl());
             return Response.rejectByPolicy();
         }
@@ -243,7 +302,10 @@ public class Gateway {
             throw new RuntimeException("Unsupported method: " + request.getMethod());
         }
 
-        return execute(request, proxyRequest);
+        log.info("Fetch {}:{}", request.getMethod(), request.getUrl());
+        Response response = execute(request, proxyRequest);
+        log.info("Done {}:{}", request.getMethod(), request.getUrl());
+        return response;
     }
 
 }

@@ -24,79 +24,23 @@ import io.kamax.matrix.gw.config.Config;
 import io.kamax.matrix.gw.config.Value;
 import io.kamax.matrix.gw.config.yaml.YamlConfigLoader;
 import io.kamax.matrix.gw.model.Gateway;
-import io.kamax.matrix.gw.model.Request;
-import io.kamax.matrix.gw.model.Response;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
-import io.undertow.util.HttpString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.*;
 
 public class UndertowApp {
-
-    private final static Logger log = LoggerFactory.getLogger(UndertowApp.class);
 
     public static void main(String[] args) throws IOException {
         Config cfg = Value.get(YamlConfigLoader.loadFromFile("mxgwd.yaml"), Config::new);
         Gateway gw = new Gateway(cfg);
 
+        CatchAllHandler allHandler = new CatchAllHandler(gw);
+
         Undertow server = Undertow.builder()
                 .addHttpListener(cfg.getServer().getPort(), "0.0.0.0")
-                .setHandler(Handlers.path()
-                        .addPrefixPath("/", exchange -> {
-                            if (exchange.isInIoThread()) {
-                                exchange.dispatch(() -> {
-                                    try {
-                                        URL url = new URL(exchange.getRequestURL());
-                                        Map<String, List<String>> headers = new HashMap<>();
-                                        exchange.getRequestHeaders().forEach(h -> {
-                                            headers.put(h.getHeaderName().toString(), Arrays.asList(h.toArray()));
-                                        });
-
-                                        Map<String, List<String>> parameters = new HashMap<>();
-                                        exchange.getQueryParameters().forEach((k, v) -> {
-                                            parameters.put(k, new ArrayList<>(v));
-                                        });
-
-                                        exchange.getRequestReceiver().receiveFullBytes((exchange1, message) -> {
-                                            Request reqOut = new Request();
-                                            reqOut.setMethod(exchange1.getRequestMethod().toString());
-                                            reqOut.setUrl(url);
-                                            reqOut.setHeaders(headers);
-                                            reqOut.setQuery(parameters);
-                                            if (message.length > 0) {
-                                                reqOut.setBody(message);
-                                            }
-
-                                            try {
-                                                Response resIn = gw.execute(reqOut);
-                                                exchange1.setStatusCode(resIn.getStatus());
-                                                resIn.getHeaders().forEach((k, v) -> {
-                                                    v.forEach(vv -> exchange1.getResponseHeaders().add(HttpString.tryFromString(k), vv));
-                                                });
-                                                resIn.getBody().ifPresent(body -> {
-                                                    exchange1.setResponseContentLength(body.length);
-                                                    exchange1.getResponseSender().send(ByteBuffer.wrap(body));
-                                                });
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        });
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        exchange.setStatusCode(500);
-                                        exchange.getResponseSender().send("Internal Server Error");
-                                    } finally {
-                                        exchange.endExchange();
-                                    }
-                                });
-                            }
-                        })).build();
+                .setHandler(Handlers.path().addPrefixPath("/", allHandler))
+                .build();
 
         server.start();
     }

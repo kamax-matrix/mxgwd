@@ -22,11 +22,10 @@ package io.kamax.matrix.gw.model.acl;
 
 import io.kamax.matrix.gw.config.matrix.MatrixAcl;
 import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
-import io.kamax.matrix.gw.config.matrix.MatrixHost;
-import io.kamax.matrix.gw.model.Request;
+import io.kamax.matrix.gw.model.Exchange;
 
 public interface AclTargetHandler {
 
-    boolean isAllowed(Request request, String hostname, MatrixHost mxHost, MatrixEndpoint endpoint, MatrixAcl acl);
+    boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl);
 
 }

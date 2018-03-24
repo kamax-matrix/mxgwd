@@ -22,15 +22,15 @@ package io.kamax.matrix.gw.model;
 
 import io.kamax.matrix._MatrixID;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Context {
 
     private boolean authenticated;
     private String accessToken;
-    private _MatrixID userId;
-    private List<String> roles = new ArrayList<>();
+    private _MatrixID user;
+    private List<String> roles;
 
     public boolean isAuthenticated() {
         return authenticated;
@@ -48,16 +48,16 @@ public class Context {
         this.accessToken = accessToken;
     }
 
-    public _MatrixID getUserId() {
-        return userId;
+    public _MatrixID getUser() {
+        return user;
     }
 
-    public void setUserId(_MatrixID userId) {
-        this.userId = userId;
+    public void setUser(_MatrixID user) {
+        this.user = user;
     }
 
-    public List<String> getRoles() {
-        return roles;
+    public Optional<List<String>> getRoles() {
+        return Optional.ofNullable(roles);
     }
 
     public void setRoles(List<String> roles) {

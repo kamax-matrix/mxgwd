@@ -23,14 +23,13 @@ package io.kamax.matrix.gw.model.acl;
 import io.kamax.matrix.gw.config.matrix.AclType;
 import io.kamax.matrix.gw.config.matrix.MatrixAcl;
 import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
-import io.kamax.matrix.gw.config.matrix.MatrixHost;
-import io.kamax.matrix.gw.model.Request;
+import io.kamax.matrix.gw.model.Exchange;
 import org.apache.commons.lang3.StringUtils;
 
 public class MethodTargetHandler implements AclTargetHandler {
 
-    public boolean isAllowed(Request request, String hostname, MatrixHost mxHost, MatrixEndpoint endpoint, MatrixAcl acl) {
-        boolean isMethod = StringUtils.equals(acl.getValue(), request.getMethod());
+    public boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl) {
+        boolean isMethod = StringUtils.equals(acl.getValue(), ex.getRequest().getMethod());
 
         if (AclType.Blacklist.is(acl) && isMethod)
             return false;

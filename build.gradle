@@ -24,6 +24,7 @@ apply plugin: 'java'
 
 repositories {
     maven { url 'https://kamax.io/maven/releases' }
+    maven { url 'https://kamax.io/maven/snapshots' }
     jcenter()
 }
 
@@ -31,8 +32,8 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.25'
     compile 'commons-io:commons-io:2.6'
     compile 'org.yaml:snakeyaml:1.20'
-    compile 'io.undertow:undertow-core:1.4.12.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8'
+    compile 'io.undertow:undertow-core:2.0.1.Final'
+    compile 'io.kamax:matrix-java-sdk:0.0.8-11-g2c25a68'
 
     testCompile 'junit:junit:4.12'
 }
