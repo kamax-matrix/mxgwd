@@ -18,36 +18,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-apply plugin: 'java'
-apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
+package io.kamax.matrix.gw.config.matrix;
 
-group = 'io.kamax'
-mainClassName = 'io.kamax.matrix.gw.undertow.UndertowApp'
+import io.kamax.matrix.gw.config.Value;
 
-buildscript {
-    repositories {
-        jcenter()
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MatrixHost {
+
+    private URL to;
+    private URL toIdentity;
+    private List<MatrixEndpoint> endpoints;
+
+    public URL getTo() {
+        return to;
     }
 
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.3'
+    public void setTo(URL to) {
+        this.to = to;
     }
-}
 
+    public URL getToIdentity() {
+        return toIdentity;
+    }
 
-repositories {
-    maven { url 'https://kamax.io/maven/releases' }
-    maven { url 'https://kamax.io/maven/snapshots' }
-    jcenter()
-}
+    public void setToIdentity(URL toIdentity) {
+        this.toIdentity = toIdentity;
+    }
 
-dependencies {
-    compile 'org.slf4j:slf4j-simple:1.7.25'
-    compile 'commons-io:commons-io:2.6'
-    compile 'org.yaml:snakeyaml:1.20'
-    compile 'io.undertow:undertow-core:2.0.1.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8-11-g2c25a68'
+    public List<MatrixEndpoint> getEndpoints() {
+        return Value.get(endpoints, ArrayList::new);
+    }
 
-    testCompile 'junit:junit:4.12'
+    public void setEndpoints(List<MatrixEndpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
+
 }

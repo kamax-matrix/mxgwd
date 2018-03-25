@@ -18,4 +18,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.model.acl;
+
+import io.kamax.matrix.gw.config.matrix.AclType;
+import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
+import io.kamax.matrix.gw.model.Exchange;
+import org.apache.commons.lang3.StringUtils;
+
+public class MethodTargetHandler implements AclTargetHandler {
+
+    public boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl) {
+        boolean isMethod = StringUtils.equals(acl.getValue(), ex.getRequest().getMethod());
+
+        if (AclType.Blacklist.is(acl) && isMethod)
+            return false;
+
+        if (AclType.Whitelist.is(acl) && !isMethod)
+            return false;
+
+        return true;
+    }
+
+}

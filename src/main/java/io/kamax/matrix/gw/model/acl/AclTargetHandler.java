@@ -18,4 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.model.acl;
+
+import io.kamax.matrix.gw.config.matrix.MatrixAcl;
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
+import io.kamax.matrix.gw.model.Exchange;
+
+public interface AclTargetHandler {
+
+    boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl);
+
+}

@@ -18,4 +18,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.config;
+
+import io.kamax.matrix.gw.config.matrix.Matrix;
+import io.kamax.matrix.gw.config.server.Server;
+
+public class Config {
+
+    private Matrix matrix;
+    private Server server;
+
+    public Matrix getMatrix() {
+        return Value.get(matrix, Matrix::new);
+    }
+
+    public void setMatrix(Matrix matrix) {
+        this.matrix = matrix;
+    }
+
+    public Server getServer() {
+        return Value.get(server, Server::new);
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
+    }
+
+}

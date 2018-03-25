@@ -18,4 +18,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.config.matrix;
+
+import io.kamax.matrix.gw.config.Value;
+
+public class Matrix {
+
+    private MatrixClient client;
+
+    public MatrixClient getClient() {
+        return Value.get(client, MatrixClient::new);
+    }
+
+    public void setClient(MatrixClient client) {
+        this.client = client;
+    }
+
+}

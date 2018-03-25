@@ -18,4 +18,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'matrix-gateway'
+package io.kamax.matrix.gw.config.server;
+
+import io.kamax.matrix.gw.config.Value;
+
+public class Server {
+
+    private Integer port;
+
+    public Integer getPort() {
+        return Value.get(port, 8007);
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+}
