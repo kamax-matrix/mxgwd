@@ -22,12 +22,12 @@ package io.kamax.mxgwd.model;
 
 import com.google.gson.JsonObject;
 import io.kamax.matrix.MatrixID;
+import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.config.Config;
 import io.kamax.mxgwd.config.matrix.MatrixAcl;
 import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
 import io.kamax.mxgwd.config.matrix.MatrixHost;
 import io.kamax.mxgwd.model.acl.AclTargetHandler;
-import io.kamax.matrix.json.GsonUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -328,8 +328,7 @@ public class Gateway {
         for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
             actionMapper.map(endpoint.getAction()).ifPresent(mp -> {
                 boolean allowed = endpoint.getAcls().stream()
-                        .map(acl -> !getAclTargetHandler(acl.getTarget()).isAllowed(ex, endpoint, acl)).findAny()
-                        .orElse(true);
+                        .allMatch(acl -> getAclTargetHandler(acl.getTarget()).isAllowed(ex, endpoint, acl));
                 policies.put(endpoint.getAction(), allowed);
             });
         }

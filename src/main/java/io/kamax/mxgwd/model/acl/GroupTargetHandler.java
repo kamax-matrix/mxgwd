@@ -37,7 +37,7 @@ public class GroupTargetHandler implements AclTargetHandler {
                 return false;
 
             return true;
-        }).orElse(true);
+        }).orElse(false);
     }
 
 }
