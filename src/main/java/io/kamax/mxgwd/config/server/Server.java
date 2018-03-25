@@ -18,4 +18,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config.server;
+
+import io.kamax.mxgwd.config.Value;
+
+public class Server {
+
+    private Integer port;
+
+    public Integer getPort() {
+        return Value.get(port, 8007);
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+}

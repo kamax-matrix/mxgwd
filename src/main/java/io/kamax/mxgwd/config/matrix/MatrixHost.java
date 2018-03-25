@@ -18,4 +18,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config.matrix;
+
+import io.kamax.mxgwd.config.Value;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MatrixHost {
+
+    private URL to;
+    private URL toIdentity;
+    private List<MatrixEndpoint> endpoints;
+
+    public URL getTo() {
+        return to;
+    }
+
+    public void setTo(URL to) {
+        this.to = to;
+    }
+
+    public URL getToIdentity() {
+        return toIdentity;
+    }
+
+    public void setToIdentity(URL toIdentity) {
+        this.toIdentity = toIdentity;
+    }
+
+    public List<MatrixEndpoint> getEndpoints() {
+        return Value.get(endpoints, ArrayList::new);
+    }
+
+    public void setEndpoints(List<MatrixEndpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
+
+}

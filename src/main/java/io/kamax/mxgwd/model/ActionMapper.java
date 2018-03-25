@@ -18,4 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.model;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class ActionMapper {
+
+    private Map<String, MethodPath> actions;
+
+    public ActionMapper() {
+        actions = new HashMap<>();
+        actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
+    }
+
+    public Optional<MethodPath> map(String action) {
+        return Optional.ofNullable(actions.get(action));
+    }
+
+}

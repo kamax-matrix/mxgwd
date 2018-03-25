@@ -18,4 +18,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config.matrix;
+
+import io.kamax.mxgwd.config.Value;
+
+public class Matrix {
+
+    private MatrixClient client;
+
+    public MatrixClient getClient() {
+        return Value.get(client, MatrixClient::new);
+    }
+
+    public void setClient(MatrixClient client) {
+        this.client = client;
+    }
+
+}

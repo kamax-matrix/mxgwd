@@ -23,7 +23,7 @@ apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'io.kamax'
-mainClassName = 'io.kamax.matrix.gw.undertow.UndertowApp'
+mainClassName = 'io.kamax.mxgwd.undertow.UndertowApp'
 
 buildscript {
     repositories {

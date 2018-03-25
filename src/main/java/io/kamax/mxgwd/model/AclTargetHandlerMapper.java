@@ -18,4 +18,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.model;
+
+import io.kamax.mxgwd.model.acl.AclTargetHandler;
+import io.kamax.mxgwd.model.acl.GroupTargetHandler;
+import io.kamax.mxgwd.model.acl.MethodTargetHandler;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class AclTargetHandlerMapper {
+
+    private Map<String, AclTargetHandler> handlers;
+
+    public AclTargetHandlerMapper() {
+        handlers = new HashMap<>();
+        handlers.put("method", new MethodTargetHandler());
+        handlers.put("group", new GroupTargetHandler());
+    }
+
+    public Optional<AclTargetHandler> map(String id) {
+        return Optional.ofNullable(handlers.get(id));
+    }
+
+}

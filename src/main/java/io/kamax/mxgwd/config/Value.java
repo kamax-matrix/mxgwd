@@ -18,4 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config;
+
+import java.util.Objects;
+import java.util.function.Supplier;
+
+public class Value {
+
+    private Value() {
+        // no instance
+    }
+
+    public static <T> T get(T value, Supplier<T> supplier) {
+        return Objects.isNull(value) ? supplier.get() : value;
+    }
+
+    public static int get(Integer value, int fallback) {
+        return Objects.isNull(value) ? fallback : value;
+    }
+
+    public static String get(String value, String fallback) {
+        return Objects.isNull(value) ? fallback : value;
+    }
+
+}

@@ -18,4 +18,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.model;
+
+public class MethodPath {
+
+    private String method;
+    private String path;
+
+    public MethodPath(String method, String path) {
+        this.method = method;
+        this.path = path;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+}

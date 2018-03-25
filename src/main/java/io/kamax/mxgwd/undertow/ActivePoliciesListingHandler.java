@@ -18,4 +18,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.undertow;
+
+import io.kamax.mxgwd.model.Gateway;
+import io.kamax.mxgwd.model.Request;
+import io.kamax.mxgwd.model.Response;
+import io.undertow.server.HttpServerExchange;
+
+public class ActivePoliciesListingHandler extends HttpServerExchangeHandler {
+
+    private Gateway gw;
+
+    public ActivePoliciesListingHandler(Gateway gw) {
+        this.gw = gw;
+    }
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        if (exchange.isInIoThread()) {
+            exchange.dispatch(this);
+            return;
+        }
+
+        Request req = extract(exchange);
+        Response response = gw.getEffectivePolicies(req);
+        sendResponse(exchange, response);
+    }
+
+}

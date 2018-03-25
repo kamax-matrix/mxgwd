@@ -18,4 +18,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.model.acl;
+
+import io.kamax.mxgwd.config.matrix.MatrixAcl;
+import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
+import io.kamax.mxgwd.model.Exchange;
+
+public interface AclTargetHandler {
+
+    boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl);
+
+}

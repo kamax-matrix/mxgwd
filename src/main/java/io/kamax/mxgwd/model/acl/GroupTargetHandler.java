@@ -18,4 +18,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.model.acl;
+
+import io.kamax.mxgwd.config.matrix.AclType;
+import io.kamax.mxgwd.config.matrix.MatrixAcl;
+import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
+import io.kamax.mxgwd.model.Exchange;
+
+public class GroupTargetHandler implements AclTargetHandler {
+
+    @Override
+    public boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl) {
+        return ex.getContext().getRoles().map(list -> {
+            if (AclType.Blacklist.is(acl) && list.contains(acl.getValue()))
+                return false;
+
+            if (AclType.Whitelist.is(acl) && !list.contains(acl.getValue()))
+                return false;
+
+            return true;
+        }).orElse(true);
+    }
+
+}

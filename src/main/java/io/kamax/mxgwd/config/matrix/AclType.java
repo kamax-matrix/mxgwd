@@ -18,4 +18,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config.matrix;
+
+public enum AclType {
+
+    Whitelist,
+    Blacklist;
+
+    public boolean is(String id) {
+        return toString().equalsIgnoreCase(id);
+    }
+
+    public boolean is(MatrixAcl acl) {
+        return is(acl.getType());
+    }
+
+}

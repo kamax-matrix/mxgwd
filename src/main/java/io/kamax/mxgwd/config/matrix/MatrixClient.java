@@ -18,4 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-rootProject.name = 'mxgwd'
+package io.kamax.mxgwd.config.matrix;
+
+import io.kamax.mxgwd.config.Value;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class MatrixClient {
+
+    private Map<String, MatrixHost> hosts;
+
+    public Map<String, MatrixHost> getHosts() {
+        return Value.get(hosts, HashMap::new);
+    }
+
+    public void setHosts(Map<String, MatrixHost> hosts) {
+        this.hosts = hosts;
+    }
+
+}

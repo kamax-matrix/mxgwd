@@ -1,5 +1,5 @@
-# Matrix Gateway
-[![Build Status](https://travis-ci.org/kamax-io/matrix-gateway.svg?branch=master)](https://travis-ci.org/kamax-io/matrix-gateway)
+# mxgwd - Matrix Policy Gateway Daemon
+[![Build Status](https://travis-ci.org/kamax-io/mxgwd.svg?branch=master)](https://travis-ci.org/kamax-io/mxgwd)
 
 - [Overview](#overview)
 - [Concepts](#concepts)
@@ -7,18 +7,18 @@
 - [Support](#support)
 
 ## Overview
-A gateway for the Matrix REST API that aims to:
+mxgwd is a gateway/reverse proxy for the Matrix REST API that aims to:
 - Control what users can do with the Matrix API, depending on roles backed by an extended Identity server.
 - Control what federation calls are allowed and from which server(s).
 - Filter and/or transform endpoints.
 - Perform additional actions for matching requests.
 
-This gateway wishes to be client and server agnostic, so policies can be consistently applied across implementations.
+mxgwd wishes to be client and server agnostic, so policies can be consistently applied across implementations.
 
 **THIS SOFTWARE IS CURRENTLY ALPHA, USAGE IN PRODUCTION IS DISCOURAGED**
 
 ## Concepts
-The gateway processes requests of configured hosts by matching endpoints/actions and processing ACLs linked to them.
+mxgwd processes requests of configured hosts by matching endpoints/actions and processing ACLs linked to them.
 If all applicable ACLs allow the request, it is then sent to the backend.
 
 ### Host
@@ -237,7 +237,7 @@ java -jar build/libs/mxgwd.jar
 
 ## Support
 ### Community
-Matrix room: [#matrix-gateway:kamax.io](https://matrix.to/#/#matrix-gateway:kamax.io)
+Matrix room: [#mxgwd:kamax.io](https://matrix.to/#/#mxgwd:kamax.io)
 
 ### Commercial
 See the [contact page](https://www.kamax.io/contact/) on our website.
