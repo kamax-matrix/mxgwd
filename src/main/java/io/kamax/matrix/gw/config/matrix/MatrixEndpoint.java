@@ -22,6 +22,7 @@ package io.kamax.matrix.gw.config.matrix;
 
 import io.kamax.matrix.gw.config.Value;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class MatrixEndpoint {
     private String method;
     private String path;
     private String action;
-    private String to;
+    private URL to;
     private List<MatrixAcl> acls;
 
     public String getMethod() {
@@ -57,11 +58,11 @@ public class MatrixEndpoint {
         this.action = action;
     }
 
-    public String getTo() {
+    public URL getTo() {
         return to;
     }
 
-    public void setTo(String to) {
+    public void setTo(URL to) {
         this.to = to;
     }
 

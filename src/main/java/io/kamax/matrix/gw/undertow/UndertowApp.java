@@ -26,13 +26,15 @@ import io.kamax.matrix.gw.config.yaml.YamlConfigLoader;
 import io.kamax.matrix.gw.model.Gateway;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
 public class UndertowApp {
 
     public static void main(String[] args) throws IOException {
-        Config cfg = Value.get(YamlConfigLoader.loadFromFile("mxgwd.yaml"), Config::new);
+        String cfgFile = StringUtils.defaultIfBlank(System.getenv("MXGWD_CONFIG_FILE"), "mxgwd.yaml");
+        Config cfg = Value.get(YamlConfigLoader.loadFromFile(cfgFile), Config::new);
         Gateway gw = new Gateway(cfg);
 
         CatchAllHandler allHandler = new CatchAllHandler(gw);

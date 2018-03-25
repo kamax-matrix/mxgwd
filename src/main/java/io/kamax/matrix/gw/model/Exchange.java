@@ -20,7 +20,10 @@
 
 package io.kamax.matrix.gw.model;
 
+import io.kamax.matrix.gw.config.matrix.MatrixEndpoint;
 import io.kamax.matrix.gw.config.matrix.MatrixHost;
+
+import java.util.Optional;
 
 public class Exchange {
 
@@ -30,6 +33,7 @@ public class Exchange {
     private Context context;
     private String hostname;
     private MatrixHost host;
+    private MatrixEndpoint endpoint;
 
     public Exchange(Request request, Context context, String hostname, MatrixHost host) {
         this.request = request;
@@ -60,6 +64,14 @@ public class Exchange {
 
     public MatrixHost getHost() {
         return host;
+    }
+
+    public Optional<MatrixEndpoint> getEndpoint() {
+        return Optional.ofNullable(endpoint);
+    }
+
+    public void setEndpoint(MatrixEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
 }

@@ -95,6 +95,10 @@ public class Gateway {
                     endpoint.setMethod(mp.getMethod());
                     endpoint.setPath(mp.getPath());
                 }
+
+                if (Objects.isNull(host.getTo()) && Objects.isNull(endpoint.getTo())) {
+                    throw new RuntimeException("A backend URL must be provider either at the host or at the endpoint level");
+                }
             }
         }
     }
@@ -153,10 +157,6 @@ public class Gateway {
 
     private Response execute(Request reqIn, HttpRequestBase reqOut) throws IOException {
         reqIn.getHeaders().forEach((name, values) -> values.forEach(value -> {
-            if (StringUtils.equals(name, "Host")) {
-                return;
-            }
-
             if (StringUtils.equals(name, "Content-Length")) {
                 return;
             }
@@ -186,15 +186,7 @@ public class Gateway {
     }
 
     private boolean isAllowed(Exchange ex) {
-        for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
-            boolean pathMatch = StringUtils.startsWith(ex.getRequest().getUrl().getPath(), endpoint.getPath());
-            boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
-            boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), ex.getRequest().getMethod());
-
-            if (!pathMatch || !methodMatch) {
-                continue;
-            }
-
+        return ex.getEndpoint().map(endpoint -> {
             for (MatrixAcl acl : endpoint.getAcls()) {
                 if (!getAclTargetHandler(acl.getTarget()).isAllowed(
                         ex,
@@ -204,9 +196,9 @@ public class Gateway {
                     return false;
                 }
             }
-        }
 
-        return Objects.nonNull(ex.getHost().getTo());
+            return true;
+        }).orElse(Objects.nonNull(ex.getHost().getTo()));
     }
 
     private Exchange buildExchange(Request request, MatrixHost mxHost) {
@@ -250,7 +242,23 @@ public class Gateway {
         });
 
         // We build the exchange object, bundling all the data so far
-        return new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
+        Exchange ex = new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
+
+        // We try to find a matching endpoint
+        for (MatrixEndpoint endpoint : mxHost.getEndpoints()) {
+            boolean pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+            boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
+            boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), request.getMethod());
+
+            if (!pathMatch || !methodMatch) {
+                continue;
+            }
+
+            ex.setEndpoint(endpoint);
+            break;
+        }
+
+        return ex;
     }
 
     private Exchange buildExchange(Request request) {
@@ -259,11 +267,13 @@ public class Gateway {
 
     private Response proxyRequest(Exchange ex) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(ex.getRequest().getUrl().toString());
-        b.setScheme(ex.getHost().getTo().getProtocol());
-        b.setHost(ex.getHost().getTo().getHost());
-        if (ex.getHost().getTo().getPort() != -1) {
-            b.setPort(ex.getHost().getTo().getPort());
+        URL targetHost = ex.getEndpoint().map(MatrixEndpoint::getTo).orElse(ex.getHost().getTo());
+        b.setScheme(targetHost.getProtocol());
+        b.setHost(targetHost.getHost());
+        if (targetHost.getPort() != -1) {
+            b.setPort(targetHost.getPort());
         }
+        URL targetEndpoint = b.build().toURL();
         ex.getRequest().getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         URI uri = b.build();
 
@@ -303,7 +313,7 @@ public class Gateway {
             throw new RuntimeException("Unsupported method: " + ex.getRequest().getMethod());
         }
 
-        log.info("Fetch {}:{}", ex.getRequest().getMethod(), ex.getRequest().getUrl());
+        log.info("Fetch {}:{}", ex.getRequest().getMethod(), targetEndpoint.toString());
         Response response = execute(ex.getRequest(), proxyRequest);
         ex.setResponse(response);
         log.info("Done {}:{}", ex.getRequest().getMethod(), ex.getRequest().getUrl());

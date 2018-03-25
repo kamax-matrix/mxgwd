@@ -36,6 +36,7 @@ The following configuration keys are available:
 - `action` to match Actions
 - `method` to match HTTP methods
 - `path` to match URL paths
+- `to` to overwrite the target URL defined at the host level
 
 #### Actions
 As actions represent well-defined messages and/or endpoints from the Matrix specification, the default Matrix naming scheme
@@ -169,6 +170,7 @@ matrix.client.hosts:
           
       # Another endpoint definition
       - action: ...
+        to: <Specific backend target URL, takes precedence over the Host one>
         acls:
           - ...
           - ...
