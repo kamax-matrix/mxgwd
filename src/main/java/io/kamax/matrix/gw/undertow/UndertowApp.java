@@ -36,10 +36,13 @@ public class UndertowApp {
         Gateway gw = new Gateway(cfg);
 
         CatchAllHandler allHandler = new CatchAllHandler(gw);
+        ActivePoliciesListingHandler activePolicies = new ActivePoliciesListingHandler(gw);
 
         Undertow server = Undertow.builder()
                 .addHttpListener(cfg.getServer().getPort(), "0.0.0.0")
-                .setHandler(Handlers.path().addPrefixPath("/", allHandler))
+                .setHandler(Handlers.path()
+                        .addExactPath("/_matrix/client/r0/policy/policies", activePolicies)
+                        .addPrefixPath("/", allHandler))
                 .build();
 
         server.start();

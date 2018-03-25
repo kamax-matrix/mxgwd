@@ -88,7 +88,8 @@ public class Gateway {
                 }
 
                 if (StringUtils.isNotBlank(endpoint.getAction())) {
-                    MethodPath mp = actionMapper.map(endpoint.getAction()).orElseThrow(() -> new RuntimeException("Unknown action " + endpoint.getAction()));
+                    MethodPath mp = actionMapper.map(endpoint.getAction())
+                            .orElseThrow(() -> new RuntimeException("Unknown action " + endpoint.getAction()));
                     log.info("Endpoint: {} to {}:{}", endpoint.getAction(), mp.getMethod(), mp.getPath());
 
                     endpoint.setMethod(mp.getMethod());
@@ -104,6 +105,10 @@ public class Gateway {
 
     private Optional<MatrixHost> findHostFor(URL url) {
         return Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(url.getAuthority()));
+    }
+
+    private MatrixHost getHostFor(URL url) {
+        return findHostFor(url).orElseThrow(RuntimeException::new);
     }
 
     private Optional<String> findAccessTokenInHeaders(Request request) {
@@ -184,9 +189,9 @@ public class Gateway {
         for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
             boolean pathMatch = StringUtils.startsWith(ex.getRequest().getUrl().getPath(), endpoint.getPath());
             boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
-            boolean methodMatch = StringUtils.equals(endpoint.getMethod(), ex.getRequest().getMethod());
+            boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), ex.getRequest().getMethod());
 
-            if (!pathMatch || (!methodBlank && !methodMatch)) {
+            if (!pathMatch || !methodMatch) {
                 continue;
             }
 
@@ -204,13 +209,10 @@ public class Gateway {
         return Objects.nonNull(ex.getHost().getTo());
     }
 
-    public Response execute(Request request) throws URISyntaxException, IOException {
-        log.info("Handle {}:{}", request.getMethod(), request.getUrl());
-        // We find if the host has been configured (and so, allowed)
-        MatrixHost mxHost = findHostFor(request.getUrl()).orElseThrow(RuntimeException::new);
+    private Exchange buildExchange(Request request, MatrixHost mxHost) {
+        Context context = new Context();
 
         // We build the security context; finding out if the caller is authenticated, its identity, the roles it has
-        Context context = new Context();
         findAccessToken(request).ifPresent(token -> {
             context.setAccessToken(token);
 
@@ -237,9 +239,8 @@ public class Gateway {
                         }
 
                         JsonObject groupsBody = GsonUtil.parseObj(EntityUtils.toString(groupsRes.getEntity()));
-                        GsonUtil.findArray(groupsBody, "roles").ifPresent(arr -> {
-                            context.setRoles(GsonUtil.asList(arr, String.class));
-                        });
+                        GsonUtil.findArray(groupsBody, "roles")
+                                .ifPresent(arr -> context.setRoles(GsonUtil.asList(arr, String.class)));
                         log.info("Roles: {}", GsonUtil.get().toJson(context.getRoles().orElse(Collections.emptyList())));
                     }
                 }
@@ -249,26 +250,26 @@ public class Gateway {
         });
 
         // We build the exchange object, bundling all the data so far
-        Exchange ex = new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
+        return new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
+    }
 
-        if (!isAllowed(ex)) {
-            log.info("Reject {}:{}", request.getMethod(), request.getUrl());
-            return Response.rejectByPolicy();
-        }
-        log.info("Allow {}:{}", request.getMethod(), request.getUrl().toString());
+    private Exchange buildExchange(Request request) {
+        return buildExchange(request, getHostFor(request.getUrl()));
+    }
 
-        URIBuilder b = new URIBuilder(request.getUrl().toString());
-        b.setScheme(mxHost.getTo().getProtocol());
-        b.setHost(mxHost.getTo().getHost());
-        if (mxHost.getTo().getPort() != -1) {
-            b.setPort(mxHost.getTo().getPort());
+    private Response proxyRequest(Exchange ex) throws URISyntaxException, IOException {
+        URIBuilder b = new URIBuilder(ex.getRequest().getUrl().toString());
+        b.setScheme(ex.getHost().getTo().getProtocol());
+        b.setHost(ex.getHost().getTo().getHost());
+        if (ex.getHost().getTo().getPort() != -1) {
+            b.setPort(ex.getHost().getTo().getPort());
         }
-        request.getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
+        ex.getRequest().getQuery().forEach((name, values) -> values.forEach(value -> b.addParameter(name, value)));
         URI uri = b.build();
 
         HttpRequestBase proxyRequest = null;
         // FIXME map of handler?
-        switch (request.getMethod()) {
+        switch (ex.getRequest().getMethod()) {
             case "OPTIONS":
                 proxyRequest = new HttpOptions(uri);
                 break;
@@ -283,29 +284,66 @@ public class Gateway {
                 break;
             case "PATCH":
                 HttpPatch patchReq = new HttpPatch(uri);
-                patchReq.setEntity(new ByteArrayEntity(request.getBody()));
+                patchReq.setEntity(new ByteArrayEntity(ex.getRequest().getBody()));
                 proxyRequest = patchReq;
                 break;
             case "POST":
                 HttpPost postReq = new HttpPost(uri);
-                postReq.setEntity(new ByteArrayEntity(request.getBody()));
+                postReq.setEntity(new ByteArrayEntity(ex.getRequest().getBody()));
                 proxyRequest = postReq;
                 break;
             case "PUT":
                 HttpPut putReq = new HttpPut(uri);
-                putReq.setEntity(new ByteArrayEntity(request.getBody()));
+                putReq.setEntity(new ByteArrayEntity(ex.getRequest().getBody()));
                 proxyRequest = putReq;
                 break;
         }
 
         if (Objects.isNull(proxyRequest)) {
-            throw new RuntimeException("Unsupported method: " + request.getMethod());
+            throw new RuntimeException("Unsupported method: " + ex.getRequest().getMethod());
         }
 
-        log.info("Fetch {}:{}", request.getMethod(), request.getUrl());
-        Response response = execute(request, proxyRequest);
-        log.info("Done {}:{}", request.getMethod(), request.getUrl());
+        log.info("Fetch {}:{}", ex.getRequest().getMethod(), ex.getRequest().getUrl());
+        Response response = execute(ex.getRequest(), proxyRequest);
+        ex.setResponse(response);
+        log.info("Done {}:{}", ex.getRequest().getMethod(), ex.getRequest().getUrl());
+
         return response;
+    }
+
+    public Response getEffectivePolicies(Request request) {
+        Exchange ex = buildExchange(request);
+
+        Map<String, Boolean> policies = new HashMap<>();
+        for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
+            actionMapper.map(endpoint.getAction()).ifPresent(mp -> {
+                boolean allowed = endpoint.getAcls().stream()
+                        .map(acl -> !getAclTargetHandler(acl.getTarget()).isAllowed(ex, endpoint, acl)).findAny()
+                        .orElse(true);
+                policies.put(endpoint.getAction(), allowed);
+            });
+        }
+
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("Content-Type", Collections.singletonList("application/json"));
+        Response response = new Response();
+        response.setStatus(200);
+        response.setHeaders(headers);
+        response.setBody(GsonUtil.get().toJson(policies).getBytes());
+        return response;
+    }
+
+    public Response execute(Request request) throws URISyntaxException, IOException {
+        log.info("Handle {}:{}", request.getMethod(), request.getUrl());
+
+        Exchange ex = buildExchange(request);
+        if (!isAllowed(ex)) {
+            log.info("Reject {}:{}", request.getMethod(), request.getUrl());
+            return Response.rejectByPolicy();
+        }
+        log.info("Allow {}:{}", request.getMethod(), request.getUrl().toString());
+
+        return proxyRequest(ex);
     }
 
 }

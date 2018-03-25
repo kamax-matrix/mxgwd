@@ -22,44 +22,27 @@ package io.kamax.matrix.gw.undertow;
 
 import io.kamax.matrix.gw.model.Gateway;
 import io.kamax.matrix.gw.model.Request;
+import io.kamax.matrix.gw.model.Response;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
 
-public class CatchAllHandler extends HttpServerExchangeHandler {
+public class ActivePoliciesListingHandler extends HttpServerExchangeHandler {
 
     private Gateway gw;
 
-    public CatchAllHandler(Gateway gw) {
+    public ActivePoliciesListingHandler(Gateway gw) {
         this.gw = gw;
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) {
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
         if (exchange.isInIoThread()) {
             exchange.dispatch(this);
             return;
         }
 
-        try {
-            exchange.getRequestReceiver().receiveFullBytes((exchange1, message) -> {
-                try {
-                    Request reqOut = extract(exchange);
-                    if (message.length > 0) {
-                        reqOut.setBody(message);
-                    }
-                    sendResponse(exchange1, gw.execute(reqOut));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            exchange.getResponseHeaders().put(HttpString.tryFromString("Server"), "mxgwd");
-            exchange.setStatusCode(500);
-            exchange.getResponseSender().send("Internal Server Error");
-        } finally {
-            exchange.endExchange();
-        }
+        Request req = extract(exchange);
+        Response response = gw.getEffectivePolicies(req);
+        sendResponse(exchange, response);
     }
 
 }
