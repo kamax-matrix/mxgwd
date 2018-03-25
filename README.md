@@ -141,7 +141,8 @@ server {
 ```
 
 ### Configuration
-Create a file `mxgwd.yaml` in your current working directory and add the appropriate options.
+Create a file `mxgwd.yaml` in your current working directory and add the appropriate options.  
+You can provide another path using the environment variable `MXGWD_CONFIG_FILE`.
 
 Example of pseudo-config file:
 ```yaml
@@ -225,8 +226,13 @@ All other requests to any other host will be denied.
 
 ### Run
 ```bash
+# Build mxgwd
 ./gradlew shadowJar
-java -jar build/libs/matrix-gateway-all.jar
+
+# You should create a configuration file if you haven't already
+
+# Run mxgwd 
+java -jar build/libs/mxgwd.jar
 ```
 
 ## Support

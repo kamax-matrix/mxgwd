@@ -51,3 +51,9 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
 }
+
+shadowJar {
+    baseName = 'mxgwd'
+    classifier = null
+    version = null
+}
