@@ -240,4 +240,4 @@ java -jar build/libs/mxgwd.jar
 Matrix room: [#mxgwd:kamax.io](https://matrix.to/#/#mxgwd:kamax.io)
 
 ### Commercial
-See the [contact page](https://www.kamax.io/contact/) on our website.
+See the [contact page](https://www.kamax.io/page/contact/) on our website.
