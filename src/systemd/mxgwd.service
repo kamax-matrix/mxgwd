@@ -5,6 +5,7 @@ After=syslog.target
 [Service]
 User=mxgwd
 EnvironmentFile=/etc/default/mxgwd
+SyslogIdentifier=mxgwd
 ExecStart=/usr/bin/java -Dorg.slf4j.simpleLogger.dateTimeFormat=.SSS -jar /usr/bin/mxgwd
 
 [Install]
