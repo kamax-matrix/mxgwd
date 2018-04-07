@@ -1,0 +1,6 @@
+# Visit https://github.com/kamax-io/mxgwd for configuration guidance
+
+matrix:
+  client:
+    hosts:
+      # Create a new key per host[:port] that you want to support

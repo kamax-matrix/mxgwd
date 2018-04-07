@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+# Add service account
+useradd -r mxgwd || true
+
+# Create symlink
+ln -sfT /usr/lib/mxgwd/mxgwd.jar /usr/bin/mxgwd
+
+# We check if the default config file does not already exist
+if [ ! -f /etc/default/mxgwd ]; then
+    # If not, we create it with the right value
+    echo 'MXGWD_CONFIG_FILE=/etc/mxgwd/mxgwd.yaml' > /etc/default/mxgwd
+fi
+
+# We check if a systemd service is already enabled (we already installed this)
+if systemctl is-enabled mxgwd.service > /dev/null; then
+    # Reload systemd to pickup any change
+    systemctl daemon-reload
+
+    # Restart the service
+    systemctl restart mxgwd.service
+
+# We never installed mxgwd
+else
+    # We enable it without starting it, so the sysadmin can configure it
+    systemctl enable mxgwd.service
+fi

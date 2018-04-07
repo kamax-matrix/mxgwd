@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Stop running instance if needed
+systemctl stop mxgwd.service
+
+# remove symlink
+rm /usr/bin/mxgwd

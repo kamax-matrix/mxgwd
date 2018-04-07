@@ -1,0 +1,7 @@
+Package: mxgwd
+Maintainer: Kamax.io <foss@kamax.io>
+Homepage: https://github.com/kamax-io/mxgwd
+Description: Matrix Gateway Daemon
+Architecture: all
+Depends: default-jre | default-jdk | openjdk-8-jre-headless | openjdk-8-jre | openjdk-8-jdk-headless | openjdk-8-jdk
+Version: 0

@@ -25,6 +25,31 @@ apply plugin: 'com.github.johnrengelman.shadow'
 group = 'io.kamax'
 mainClassName = 'io.kamax.mxgwd.undertow.UndertowApp'
 
+def confSampleFile = "mxgwd-sample.yaml"
+def distDir = "${project.buildDir}/dist"
+
+def debBinPath = "/usr/lib/${project.name}"
+def debConfPath = "/etc/${project.name}"
+def debSystemdPath = "/etc/systemd/system"
+
+def debBuildBasePath = "${project.buildDir}/tmp/debian"
+def debBuildDebianPath = "${debBuildBasePath}/DEBIAN"
+def debBuildBinPath = "${debBuildBasePath}${debBinPath}"
+def debBuildConfPath = "${debBuildBasePath}${debConfPath}"
+def debBuildSystemdPath = "${debBuildBasePath}${debSystemdPath}"
+
+import java.util.regex.Pattern
+String gitVersion() {
+    def versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)(-.*)?")
+    ByteArrayOutputStream out = new ByteArrayOutputStream()
+    exec {
+        commandLine = ['git', 'describe', '--tags', '--always', '--dirty']
+        standardOutput = out
+    }
+    def v = out.toString().replace(System.lineSeparator(), '')
+    return versionPattern.matcher(v).matches() ? v.substring(1) : v
+}
+
 buildscript {
     repositories {
         jcenter()
@@ -47,13 +72,77 @@ dependencies {
     compile 'commons-io:commons-io:2.6'
     compile 'org.yaml:snakeyaml:1.20'
     compile 'io.undertow:undertow-core:2.0.1.Final'
-    compile 'io.kamax:matrix-java-sdk:0.0.8-11-g2c25a68'
+    compile 'io.kamax:matrix-java-sdk:0.0.9'
 
     testCompile 'junit:junit:4.12'
 }
 
 shadowJar {
-    baseName = 'mxgwd'
+    baseName = project.name
     classifier = null
     version = null
+}
+
+task debBuild(dependsOn: shadowJar) {
+    doLast {
+        def v = gitVersion()
+        println "Version for package: ${v}"
+        mkdir distDir
+        mkdir debBuildBasePath
+        mkdir debBuildDebianPath
+        mkdir debBuildBinPath
+        mkdir debBuildConfPath
+        mkdir debBuildSystemdPath
+
+        copy {
+            from "${project.buildDir}/libs/${project.name}.jar"
+            into debBuildBinPath
+        }
+
+        ant.chmod(
+                file: "${debBuildBinPath}/${project.name}.jar",
+                perm: 'a+x'
+        )
+
+        copy {
+            from(project.file(confSampleFile))
+            into debBuildConfPath
+        }
+
+        copy {
+            from project.file('src/debian')
+            into debBuildDebianPath
+        }
+
+        ant.replace(
+                file: "${debBuildDebianPath}/control",
+                token: 'Version: 0',
+                value: "Version: ${v}"
+        )
+
+        ant.chmod(
+                file: "${debBuildDebianPath}/postinst",
+                perm: 'a+x'
+        )
+
+        ant.chmod(
+                file: "${debBuildDebianPath}/prerm",
+                perm: 'a+x'
+        )
+
+        copy {
+            from "${project.file('src/systemd/mxgwd.service')}"
+            into debBuildSystemdPath
+        }
+
+        exec {
+            commandLine(
+                    'fakeroot',
+                    'dpkg-deb',
+                    '-b',
+                    debBuildBasePath,
+                    "${project.buildDir}/dist"
+            )
+        }
+    }
 }
