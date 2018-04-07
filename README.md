@@ -30,13 +30,18 @@ If a request's host is not matched in the configuration, it will be denied.
 ### Endpoint
 An endpoint matches either:
 - A well-identified action from the client, which is translated to the appropriate HTTP method and URL path
-- A custom HTTP method and/or URL path (matched with `startsWith()`)
+- A custom HTTP method and/or URL path
 
 The following configuration keys are available:
 - `action` to match Actions
 - `method` to match HTTP methods
 - `path` to match URL paths
+- `match` to specify the type of matching on `path`
 - `to` to overwrite the target URL defined at the host level
+
+The following `match` type are available:
+- `regexp`: perform a regexp match.
+- Anything else (or key not present) will be used with `startsWith()` on the requested URL.
 
 #### Actions
 As actions represent well-defined messages and/or endpoints from the Matrix specification, the default Matrix naming scheme
@@ -159,6 +164,7 @@ matrix.client.hosts:
       - action: <Well-defined Matrix action, overwriten by method and path below>
         method: <HTTP method to match>
         path: <Start of the URL path to match>
+        match: <Path matching style>
       
         # List of ACLs to be applied to this endpoint
         acls:

@@ -48,6 +48,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class Gateway {
@@ -246,7 +247,13 @@ public class Gateway {
 
         // We try to find a matching endpoint
         for (MatrixEndpoint endpoint : mxHost.getEndpoints()) {
-            boolean pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+            boolean pathMatch;
+            if ("regexp".equals(endpoint.getMatch())) {
+                pathMatch = Pattern.compile(endpoint.getPath()).matcher(request.getUrl().getPath()).matches();
+            } else {
+                pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+            }
+
             boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
             boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), request.getMethod());
 

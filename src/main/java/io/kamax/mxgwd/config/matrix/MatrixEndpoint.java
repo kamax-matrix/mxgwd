@@ -30,6 +30,7 @@ public class MatrixEndpoint {
 
     private String method;
     private String path;
+    private String match;
     private String action;
     private URL to;
     private List<MatrixAcl> acls;
@@ -48,6 +49,14 @@ public class MatrixEndpoint {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getMatch() {
+        return match;
+    }
+
+    public void setMatch(String match) {
+        this.match = match;
     }
 
     public String getAction() {
