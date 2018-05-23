@@ -18,31 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.undertow;
+package io.kamax.mxgwd.config.matrix;
 
-import io.kamax.mxgwd.model.Gateway;
-import io.kamax.mxgwd.model.Request;
-import io.kamax.mxgwd.model.Response;
-import io.undertow.server.HttpServerExchange;
+import io.kamax.mxgwd.config.Value;
 
-public class ActivePoliciesListingHandler extends HttpServerExchangeHandler {
+import java.util.HashMap;
+import java.util.Map;
 
-    private Gateway gw;
+public class Client {
 
-    public ActivePoliciesListingHandler(Gateway gw) {
-        this.gw = gw;
+    private Map<String, Host> hosts;
+
+    public Map<String, Host> getHosts() {
+        return Value.get(hosts, HashMap::new);
     }
 
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (exchange.isInIoThread()) {
-            exchange.dispatch(this);
-            return;
-        }
-
-        Request req = extract(exchange);
-        Response response = gw.getEffectivePolicies(req);
-        sendResponse(exchange, response);
+    public void setHosts(Map<String, Host> hosts) {
+        this.hosts = hosts;
     }
 
 }

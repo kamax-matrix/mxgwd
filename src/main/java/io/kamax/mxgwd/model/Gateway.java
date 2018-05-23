@@ -24,9 +24,9 @@ import com.google.gson.JsonObject;
 import io.kamax.matrix.MatrixID;
 import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.config.Config;
-import io.kamax.mxgwd.config.matrix.MatrixAcl;
-import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
-import io.kamax.mxgwd.config.matrix.MatrixHost;
+import io.kamax.mxgwd.config.matrix.Acl;
+import io.kamax.mxgwd.config.matrix.Endpoint;
+import io.kamax.mxgwd.config.matrix.Host;
 import io.kamax.mxgwd.model.acl.AclTargetHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -79,10 +79,10 @@ public class Gateway {
     private void processConfig() {
         log.info("Config: Processing");
         for (String hostName : cfg.getMatrix().getClient().getHosts().keySet()) {
-            MatrixHost host = cfg.getMatrix().getClient().getHosts().get(hostName);
+            Host host = cfg.getMatrix().getClient().getHosts().get(hostName);
             log.info("Host {}: Processing", hostName);
-            for (MatrixEndpoint endpoint : host.getEndpoints()) {
-                for (MatrixAcl acl : endpoint.getAcls()) {
+            for (Endpoint endpoint : host.getEndpoints()) {
+                for (Acl acl : endpoint.getAcls()) {
                     if (!aclTargetMapper.map(acl.getTarget()).isPresent()) {
                         throw new RuntimeException("Unknown ACL target type: " + acl.getTarget());
                     }
@@ -108,11 +108,11 @@ public class Gateway {
         return aclTargetMapper.map(id).orElseThrow(() -> new RuntimeException("Unknown ACL target type: " + id));
     }
 
-    private Optional<MatrixHost> findHostFor(URL url) {
+    private Optional<Host> findHostFor(URL url) {
         return Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(url.getAuthority()));
     }
 
-    private MatrixHost getHostFor(URL url) {
+    private Host getHostFor(URL url) {
         return findHostFor(url).orElseThrow(RuntimeException::new);
     }
 
@@ -188,7 +188,7 @@ public class Gateway {
 
     private boolean isAllowed(Exchange ex) {
         return ex.getEndpoint().map(endpoint -> {
-            for (MatrixAcl acl : endpoint.getAcls()) {
+            for (Acl acl : endpoint.getAcls()) {
                 if (!getAclTargetHandler(acl.getTarget()).isAllowed(
                         ex,
                         endpoint,
@@ -202,7 +202,7 @@ public class Gateway {
         }).orElse(Objects.nonNull(ex.getHost().getTo()));
     }
 
-    private Exchange buildExchange(Request request, MatrixHost mxHost) {
+    private Exchange buildExchange(Request request, Host mxHost) {
         Context context = new Context();
 
         // We build the security context; finding out if the caller is authenticated, its identity, the roles it has
@@ -246,7 +246,7 @@ public class Gateway {
         Exchange ex = new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
 
         // We try to find a matching endpoint
-        for (MatrixEndpoint endpoint : mxHost.getEndpoints()) {
+        for (Endpoint endpoint : mxHost.getEndpoints()) {
             boolean pathMatch;
             if ("regexp".equals(endpoint.getMatch())) {
                 pathMatch = Pattern.compile(endpoint.getPath()).matcher(request.getUrl().getPath()).matches();
@@ -274,7 +274,7 @@ public class Gateway {
 
     private Response proxyRequest(Exchange ex) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(ex.getRequest().getUrl().toString());
-        URL targetHost = ex.getEndpoint().map(MatrixEndpoint::getTo).orElse(ex.getHost().getTo());
+        URL targetHost = ex.getEndpoint().map(Endpoint::getTo).orElse(ex.getHost().getTo());
         b.setScheme(targetHost.getProtocol());
         b.setHost(targetHost.getHost());
         if (targetHost.getPort() != -1) {
@@ -332,7 +332,7 @@ public class Gateway {
         Exchange ex = buildExchange(request);
 
         Map<String, Boolean> policies = new HashMap<>();
-        for (MatrixEndpoint endpoint : ex.getHost().getEndpoints()) {
+        for (Endpoint endpoint : ex.getHost().getEndpoints()) {
             actionMapper.map(endpoint.getAction()).ifPresent(mp -> {
                 boolean allowed = endpoint.getAcls().stream()
                         .allMatch(acl -> getAclTargetHandler(acl.getTarget()).isAllowed(ex, endpoint, acl));

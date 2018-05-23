@@ -24,13 +24,13 @@ import io.kamax.mxgwd.config.Value;
 
 public class Matrix {
 
-    private MatrixClient client;
+    private Client client;
 
-    public MatrixClient getClient() {
-        return Value.get(client, MatrixClient::new);
+    public Client getClient() {
+        return Value.get(client, Client::new);
     }
 
-    public void setClient(MatrixClient client) {
+    public void setClient(Client client) {
         this.client = client;
     }
 

@@ -20,6 +20,7 @@
 
 package io.kamax.mxgwd.undertow;
 
+import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.model.Request;
 import io.kamax.mxgwd.model.Response;
 import io.undertow.server.HttpHandler;
@@ -29,6 +30,7 @@ import io.undertow.util.HttpString;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public abstract class HttpServerExchangeHandler implements HttpHandler {
@@ -67,6 +69,17 @@ public abstract class HttpServerExchangeHandler implements HttpHandler {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void sendJsonResponse(HttpServerExchange exchange, String body) {
+        exchange.setStatusCode(200);
+        exchange.getResponseHeaders().add(HttpString.tryFromString("Content-Type"), "application/json");
+        exchange.setResponseContentLength(body.length());
+        exchange.getResponseSender().send(ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    protected void sendJsonResponse(HttpServerExchange exchange, Object o) {
+        sendJsonResponse(exchange, GsonUtil.get().toJson(o));
     }
 
 }

@@ -29,7 +29,7 @@ public enum AclType {
         return toString().equalsIgnoreCase(id);
     }
 
-    public boolean is(MatrixAcl acl) {
+    public boolean is(Acl acl) {
         return is(acl.getType());
     }
 

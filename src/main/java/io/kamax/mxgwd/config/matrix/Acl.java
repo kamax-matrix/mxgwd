@@ -20,40 +20,34 @@
 
 package io.kamax.mxgwd.config.matrix;
 
-import io.kamax.mxgwd.config.Value;
+public class Acl {
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+    private String type;
+    private String target;
+    private String value;
 
-public class MatrixHost {
-
-    private URL to;
-    private URL toIdentity;
-    private List<MatrixEndpoint> endpoints;
-
-    public URL getTo() {
-        return to;
+    public String getType() {
+        return type;
     }
 
-    public void setTo(URL to) {
-        this.to = to;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public URL getToIdentity() {
-        return toIdentity;
+    public String getTarget() {
+        return target;
     }
 
-    public void setToIdentity(URL toIdentity) {
-        this.toIdentity = toIdentity;
+    public void setTarget(String target) {
+        this.target = target;
     }
 
-    public List<MatrixEndpoint> getEndpoints() {
-        return Value.get(endpoints, ArrayList::new);
+    public String getValue() {
+        return value;
     }
 
-    public void setEndpoints(List<MatrixEndpoint> endpoints) {
-        this.endpoints = endpoints;
+    public void setValue(String value) {
+        this.value = value;
     }
 
 }

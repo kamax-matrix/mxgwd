@@ -22,19 +22,38 @@ package io.kamax.mxgwd.config.matrix;
 
 import io.kamax.mxgwd.config.Value;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MatrixClient {
+public class Host {
 
-    private Map<String, MatrixHost> hosts;
+    private URL to;
+    private URL toIdentity;
+    private List<Endpoint> endpoints;
 
-    public Map<String, MatrixHost> getHosts() {
-        return Value.get(hosts, HashMap::new);
+    public URL getTo() {
+        return to;
     }
 
-    public void setHosts(Map<String, MatrixHost> hosts) {
-        this.hosts = hosts;
+    public void setTo(URL to) {
+        this.to = to;
+    }
+
+    public URL getToIdentity() {
+        return toIdentity;
+    }
+
+    public void setToIdentity(URL toIdentity) {
+        this.toIdentity = toIdentity;
+    }
+
+    public List<Endpoint> getEndpoints() {
+        return Value.get(endpoints, ArrayList::new);
+    }
+
+    public void setEndpoints(List<Endpoint> endpoints) {
+        this.endpoints = endpoints;
     }
 
 }

@@ -18,10 +18,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.undertow;
+package io.kamax.mxgwd.undertow.matrix.client;
 
 import io.kamax.mxgwd.model.Gateway;
 import io.kamax.mxgwd.model.Request;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
@@ -35,11 +36,6 @@ public class CatchAllHandler extends HttpServerExchangeHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) {
-        if (exchange.isInIoThread()) {
-            exchange.dispatch(this);
-            return;
-        }
-
         try {
             exchange.getRequestReceiver().receiveFullBytes((exchange1, message) -> {
                 try {

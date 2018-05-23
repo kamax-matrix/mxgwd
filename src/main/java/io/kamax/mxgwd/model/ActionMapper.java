@@ -31,6 +31,7 @@ public class ActionMapper {
     public ActionMapper() {
         actions = new HashMap<>();
         actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
+        actions.put("m.room", new MethodPath("GET", "/_matrix/client/r0/rooms/:roomId"));
     }
 
     public Optional<MethodPath> map(String action) {
