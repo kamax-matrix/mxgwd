@@ -31,14 +31,14 @@ import java.util.Objects;
 public class UserTargetHandler implements AclTargetHandler {
 
     public boolean isMatch(Exchange ex, Acl acl) {
-        if (Objects.isNull(ex.getContext().getUser())) {
-            return false;
-        }
-
         return StringUtils.equals(acl.getValue(), ex.getContext().getUser().getId());
     }
 
     public boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl) {
+        if (Objects.isNull(ex.getContext().getUser())) {
+            return true;
+        }
+
         boolean isMatch = isMatch(ex, acl);
 
         if (AclType.Blacklist.is(acl) && isMatch)
