@@ -35,6 +35,18 @@ public class EntityMapper {
     private Map<String, Function<EntityIO, List<Endpoint>>> map = new HashMap<>();
 
     public EntityMapper() {
+        map.put("m", entity -> {
+            Endpoint ep = new Endpoint();
+            ep.setMatch("regexp");
+            ep.setPath("/_matrix(.*)?");
+            Acl acl = new Acl();
+            acl.setType(entity.getAclType());
+            acl.setTarget(entity.getAclTarget());
+            acl.setValue(entity.getAclValue());
+            ep.setAcls(Collections.singletonList(acl));
+            return Collections.singletonList(ep);
+        });
+
         map.put("m.room", entity -> {
             Endpoint ep = new Endpoint();
             ep.setMatch("regexp");
