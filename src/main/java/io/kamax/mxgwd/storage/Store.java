@@ -18,22 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model;
+package io.kamax.mxgwd.storage;
 
-import java.util.HashMap;
-import java.util.Map;
+import io.kamax.mxgwd.config.matrix.EntityIO;
+
+import java.util.List;
 import java.util.Optional;
 
-public class ActionMapper {
+public interface Store {
 
-    private Map<String, MethodPath> actions = new HashMap<>();
+    Optional<EntityIO> findEntity(long id);
 
-    public ActionMapper() {
-        actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
-    }
+    EntityIO insertEntity(EntityIO io);
 
-    public Optional<MethodPath> map(String action) {
-        return Optional.ofNullable(actions.get(action));
-    }
+    void updateEntity(EntityIO io);
+
+    void deleteEntity(long id);
+
+    List<EntityIO> findEntity(EntityIO filter);
 
 }

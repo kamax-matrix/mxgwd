@@ -31,6 +31,7 @@ public class Host {
     private URL to;
     private URL toIdentity;
     private List<Endpoint> endpoints;
+    private List<Long> entities = new ArrayList<>();
 
     public URL getTo() {
         return to;
@@ -54,6 +55,18 @@ public class Host {
 
     public void setEndpoints(List<Endpoint> endpoints) {
         this.endpoints = endpoints;
+    }
+
+    public List<Long> getEntities() {
+        return entities;
+    }
+
+    public void setEntities(List<Long> entities) {
+        this.entities = entities;
+    }
+
+    public void addEntity(Long id) {
+        entities.add(id);
     }
 
 }

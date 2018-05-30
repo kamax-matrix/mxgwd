@@ -26,8 +26,11 @@ import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.config.Config;
 import io.kamax.mxgwd.config.matrix.Acl;
 import io.kamax.mxgwd.config.matrix.Endpoint;
+import io.kamax.mxgwd.config.matrix.EntityIO;
 import io.kamax.mxgwd.config.matrix.Host;
 import io.kamax.mxgwd.model.acl.AclTargetHandler;
+import io.kamax.mxgwd.storage.OrmLiteStore;
+import io.kamax.mxgwd.storage.Store;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -49,6 +52,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Gateway {
@@ -56,17 +60,22 @@ public class Gateway {
     private final Logger log = LoggerFactory.getLogger(Gateway.class);
 
     private Config cfg;
+    private Store store;
 
     private ActionMapper actionMapper;
     private AclTargetHandlerMapper aclTargetMapper;
+    private EntityMapper entityMapper;
 
     private CloseableHttpClient client;
 
     public Gateway(Config cfg) {
         this.cfg = cfg;
 
+        store = new OrmLiteStore(cfg.getStorage());
+
         actionMapper = new ActionMapper(); // TODO make configurable
         aclTargetMapper = new AclTargetHandlerMapper(); // TODO make configurable
+        entityMapper = new EntityMapper(); // TODO make configurable
         client = HttpClients.custom()
                 .setMaxConnPerRoute(Integer.MAX_VALUE) // TODO make configurable
                 .setMaxConnTotal(Integer.MAX_VALUE) // TODO make configurable
@@ -101,6 +110,17 @@ public class Gateway {
                     throw new RuntimeException("A backend URL must be provider either at the host or at the endpoint level");
                 }
             }
+
+            log.info("Loading entities from DB");
+            EntityIO filter = new EntityIO();
+            filter.setHost(hostName);
+
+            List<Long> entities = new ArrayList<>();
+            for (EntityIO io : store.findEntity(filter)) {
+                log.info("Entity: {} {}", io.getType(), io.getName());
+                entities.add(io.getId());
+            }
+            host.setEntities(entities);
         }
     }
 
@@ -108,12 +128,20 @@ public class Gateway {
         return aclTargetMapper.map(id).orElseThrow(() -> new RuntimeException("Unknown ACL target type: " + id));
     }
 
-    private Optional<Host> findHostFor(URL url) {
-        return Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(url.getAuthority()));
+    public Optional<Host> findHostFor(String name) {
+        return Optional.ofNullable(cfg.getMatrix().getClient().getHosts().get(name));
     }
 
-    private Host getHostFor(URL url) {
-        return findHostFor(url).orElseThrow(RuntimeException::new);
+    public Optional<Host> findHostFor(URL url) {
+        return findHostFor(url.getAuthority());
+    }
+
+    public Host getHostFor(String name) {
+        return findHostFor(name).orElseThrow(RuntimeException::new);
+    }
+
+    public Host getHostFor(URL url) {
+        return getHostFor(url.getAuthority());
     }
 
     private Optional<String> findAccessTokenInHeaders(Request request) {
@@ -121,7 +149,7 @@ public class Gateway {
                 .filter(e -> StringUtils.equals("Authorization", e.getKey()))
                 .map(Map.Entry::getValue)
                 .flatMap(Collection::stream)
-                .filter(v -> StringUtils.startsWith("Bearer ", v))
+                .filter(v -> StringUtils.startsWith(v, "Bearer "))
                 .map(v -> v.substring("Bearer ".length()))
                 .findAny();
     }
@@ -207,6 +235,7 @@ public class Gateway {
 
         // We build the security context; finding out if the caller is authenticated, its identity, the roles it has
         findAccessToken(request).ifPresent(token -> {
+            log.info("Access token found");
             context.setAccessToken(token);
 
             // We discover who we are
@@ -245,8 +274,15 @@ public class Gateway {
         // We build the exchange object, bundling all the data so far
         Exchange ex = new Exchange(request, context, request.getUrl().getAuthority(), mxHost);
 
-        // We try to find a matching endpoint
-        for (Endpoint endpoint : mxHost.getEndpoints()) {
+        // We get all entities and raw endpoints
+        List<Endpoint> endpoints = new ArrayList<>();
+        mxHost.getEntities().stream()
+                .map(id -> store.findEntity(id).orElseThrow(RuntimeException::new))
+                .forEach(entity -> endpoints.addAll(entityMapper.map(entity)));
+        endpoints.addAll(mxHost.getEndpoints());
+
+        // We try to find a matching raw endpoint
+        for (Endpoint endpoint : endpoints) {
             boolean pathMatch;
             if ("regexp".equals(endpoint.getMatch())) {
                 pathMatch = Pattern.compile(endpoint.getPath()).matcher(request.getUrl().getPath()).matches();
@@ -360,6 +396,26 @@ public class Gateway {
         log.info("Allow {}:{}", request.getMethod(), request.getUrl().toString());
 
         return proxyRequest(ex);
+    }
+
+    public List<Entity> findEntities(String host) {
+        return getHostFor(host).getEntities().stream()
+                .map(id -> store.findEntity(id).orElseThrow(RuntimeException::new))
+                .map(io -> new Entity(store, io))
+                .collect(Collectors.toList());
+    }
+
+    public Entity createEntity(EntityIO io) {
+        Host host = getHostFor(io.getHost());
+        store.insertEntity(io);
+        io = store.findEntity(io.getId()).orElseThrow(RuntimeException::new);
+        Entity e = new Entity(store, io);
+        host.addEntity(e.getId());
+        return e;
+    }
+
+    public Entity getEntity(long id) {
+        return new Entity(store, store.findEntity(id).orElseThrow(IllegalArgumentException::new));
     }
 
 }

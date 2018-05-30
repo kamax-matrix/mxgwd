@@ -18,22 +18,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model;
+package io.kamax.mxgwd.undertow.admin;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.google.gson.JsonArray;
+import io.kamax.matrix.json.GsonUtil;
+import io.kamax.mxgwd.model.Gateway;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
+import io.undertow.server.HttpServerExchange;
 
-public class ActionMapper {
+public class MatrixClientEntityListHandler extends HttpServerExchangeHandler {
 
-    private Map<String, MethodPath> actions = new HashMap<>();
+    private Gateway gw;
 
-    public ActionMapper() {
-        actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
+    public MatrixClientEntityListHandler(Gateway gw) {
+        this.gw = gw;
     }
 
-    public Optional<MethodPath> map(String action) {
-        return Optional.ofNullable(actions.get(action));
+    @Override
+    public void handleRequest(HttpServerExchange exchange) {
+        JsonArray entities = new JsonArray();
+        gw.findEntities(getParameter(exchange, "host"))
+                .forEach(e -> entities.add(GsonUtil.get().toJsonTree(e)));
+        sendJsonResponse(exchange, GsonUtil.makeObj("entities", entities));
     }
 
 }

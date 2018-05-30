@@ -18,22 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model;
+package io.kamax.mxgwd.config;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+public class Storage {
 
-public class ActionMapper {
+    private String type;
+    private String location;
 
-    private Map<String, MethodPath> actions = new HashMap<>();
-
-    public ActionMapper() {
-        actions.put("m.room.create", new MethodPath("POST", "/_matrix/client/r0/createRoom"));
+    public String getType() {
+        return type;
     }
 
-    public Optional<MethodPath> map(String action) {
-        return Optional.ofNullable(actions.get(action));
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
 }

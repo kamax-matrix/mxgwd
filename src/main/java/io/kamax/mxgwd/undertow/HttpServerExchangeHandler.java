@@ -26,8 +26,9 @@ import io.kamax.mxgwd.model.Response;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.commons.io.IOUtils;
 
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +36,7 @@ import java.util.*;
 
 public abstract class HttpServerExchangeHandler implements HttpHandler {
 
-    protected Request extract(HttpServerExchange exchange) throws MalformedURLException {
+    protected Request extract(HttpServerExchange exchange) throws IOException {
         Request reqOut = new Request();
 
         reqOut.setMethod(exchange.getRequestMethod().toString());
@@ -52,6 +53,8 @@ public abstract class HttpServerExchangeHandler implements HttpHandler {
             parameters.put(k, new ArrayList<>(v));
         });
         reqOut.setQuery(parameters);
+
+        reqOut.setBody(IOUtils.toString(exchange.getInputStream(), StandardCharsets.UTF_8).getBytes());
 
         return reqOut;
     }
@@ -80,6 +83,10 @@ public abstract class HttpServerExchangeHandler implements HttpHandler {
 
     protected void sendJsonResponse(HttpServerExchange exchange, Object o) {
         sendJsonResponse(exchange, GsonUtil.get().toJson(o));
+    }
+
+    protected String getParameter(HttpServerExchange exchange, String name) {
+        return exchange.getQueryParameters().get(name).getFirst();
     }
 
 }
