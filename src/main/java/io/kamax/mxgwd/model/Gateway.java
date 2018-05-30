@@ -283,6 +283,7 @@ public class Gateway {
         List<Endpoint> endpoints = new ArrayList<>();
         mxHost.getEntities().stream()
                 .map(id -> store.findEntity(id).orElseThrow(RuntimeException::new))
+                .sorted(Comparator.comparing(EntityIO::getType))
                 .forEach(entity -> endpoints.addAll(entityMapper.map(entity)));
         endpoints.addAll(mxHost.getEndpoints());
 
@@ -304,6 +305,7 @@ public class Gateway {
                 continue;
             }
 
+            log.info("Endpoint {}:{} is a match", endpoint.getMethod(), endpoint.getPath());
             ex.setEndpoint(endpoint);
             break;
         }
