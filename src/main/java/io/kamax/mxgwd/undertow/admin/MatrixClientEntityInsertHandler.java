@@ -29,12 +29,13 @@ import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
 import io.undertow.server.HttpServerExchange;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public class MatrixClientEntityPostHandler extends HttpServerExchangeHandler {
+public class MatrixClientEntityInsertHandler extends HttpServerExchangeHandler {
 
     private Gateway gw;
 
-    public MatrixClientEntityPostHandler(Gateway gw) {
+    public MatrixClientEntityInsertHandler(Gateway gw) {
         this.gw = gw;
     }
 
@@ -42,8 +43,15 @@ public class MatrixClientEntityPostHandler extends HttpServerExchangeHandler {
     public void handleRequest(HttpServerExchange exchange) throws IOException {
         Request req = extract(exchange);
         EntityIO io = GsonUtil.get().fromJson(new String(req.getBody()), EntityIO.class);
-        Entity e = gw.createEntity(io);
-        sendJsonResponse(exchange, GsonUtil.makeObj("id", e.getId()));
+        if (Objects.isNull(io.getId())) {
+            Entity e = gw.createEntity(io);
+            sendJsonResponse(exchange, GsonUtil.makeObj("id", e.getId()));
+        } else {
+            Entity e = gw.getEntity(io.getId());
+            e.setAclType(io.getAclType());
+            sendJsonResponse(exchange, "{}");
+        }
+
     }
 
 }

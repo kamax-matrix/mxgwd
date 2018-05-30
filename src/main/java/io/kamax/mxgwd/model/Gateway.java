@@ -45,10 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -83,6 +80,14 @@ public class Gateway {
                 .build();
 
         processConfig();
+    }
+
+    private String decode(String path) {
+        try {
+            return URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void processConfig() {
@@ -284,16 +289,18 @@ public class Gateway {
         // We try to find a matching raw endpoint
         for (Endpoint endpoint : endpoints) {
             boolean pathMatch;
+            String path = decode(request.getUrl().getPath());
             if ("regexp".equals(endpoint.getMatch())) {
-                pathMatch = Pattern.compile(endpoint.getPath()).matcher(request.getUrl().getPath()).matches();
+                pathMatch = Pattern.compile(endpoint.getPath()).matcher(path).matches();
             } else {
-                pathMatch = StringUtils.startsWith(request.getUrl().getPath(), endpoint.getPath());
+                pathMatch = StringUtils.startsWith(path, endpoint.getPath());
             }
 
             boolean methodBlank = StringUtils.isBlank(endpoint.getMethod());
             boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), request.getMethod());
 
             if (!pathMatch || !methodMatch) {
+                log.info("Endpoint {}:{} is not a match", endpoint.getMethod(), endpoint.getPath());
                 continue;
             }
 

@@ -20,6 +20,7 @@
 
 package io.kamax.mxgwd.model;
 
+import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.config.matrix.EntityIO;
 import io.kamax.mxgwd.storage.Store;
 
@@ -64,6 +65,10 @@ public class Entity {
 
     public String getAclValue() {
         return io.getAclValue();
+    }
+
+    public EntityIO getIo() {
+        return GsonUtil.get().fromJson(GsonUtil.get().toJson(io), EntityIO.class);
     }
 
 }

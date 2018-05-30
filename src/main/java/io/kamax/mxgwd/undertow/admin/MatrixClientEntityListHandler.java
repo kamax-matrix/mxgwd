@@ -38,7 +38,7 @@ public class MatrixClientEntityListHandler extends HttpServerExchangeHandler {
     public void handleRequest(HttpServerExchange exchange) {
         JsonArray entities = new JsonArray();
         gw.findEntities(getParameter(exchange, "host"))
-                .forEach(e -> entities.add(GsonUtil.get().toJsonTree(e)));
+                .forEach(e -> entities.add(GsonUtil.get().toJsonTree(e.getIo())));
         sendJsonResponse(exchange, GsonUtil.makeObj("entities", entities));
     }
 

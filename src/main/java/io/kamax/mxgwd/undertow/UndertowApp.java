@@ -24,9 +24,8 @@ import io.kamax.mxgwd.config.Config;
 import io.kamax.mxgwd.config.Value;
 import io.kamax.mxgwd.config.yaml.YamlConfigLoader;
 import io.kamax.mxgwd.model.Gateway;
+import io.kamax.mxgwd.undertow.admin.MatrixClientEntityInsertHandler;
 import io.kamax.mxgwd.undertow.admin.MatrixClientEntityListHandler;
-import io.kamax.mxgwd.undertow.admin.MatrixClientEntityPostHandler;
-import io.kamax.mxgwd.undertow.admin.MatrixClientEntityPutHandler;
 import io.kamax.mxgwd.undertow.admin.MatrixClientHostListHandler;
 import io.kamax.mxgwd.undertow.matrix.client.ActivePoliciesListingHandler;
 import io.kamax.mxgwd.undertow.matrix.client.CatchAllHandler;
@@ -63,8 +62,7 @@ public class UndertowApp {
                     .setHandler(Handlers.routing()
                             .add("GET", "/admin/api/v1/matrix/client/hosts", new BlockingHandler(new MatrixClientHostListHandler(cfg)))
                             .add("GET", "/admin/api/v1/matrix/client/hosts/{host}/entities", new BlockingHandler(new MatrixClientEntityListHandler(gw)))
-                            .add("POST", "/admin/api/v1/matrix/client/hosts/{host}/entities", new BlockingHandler(new MatrixClientEntityPostHandler(gw)))
-                            .add("PUT", "/admin/api/v1/matrix/client/hosts/{host}/entities/{id}", new BlockingHandler(new MatrixClientEntityPutHandler(gw)))
+                            .add("PUT", "/admin/api/v1/matrix/client/hosts/{host}/entities", new BlockingHandler(new MatrixClientEntityInsertHandler(gw)))
                     ).build();
             adminSrv.start();
         } catch (IOException e) {
