@@ -25,15 +25,15 @@ import io.kamax.mxgwd.config.Value;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MatrixClient {
+public class Client {
 
-    private Map<String, MatrixHost> hosts;
+    private Map<String, Host> hosts;
 
-    public Map<String, MatrixHost> getHosts() {
+    public Map<String, Host> getHosts() {
         return Value.get(hosts, HashMap::new);
     }
 
-    public void setHosts(Map<String, MatrixHost> hosts) {
+    public void setHosts(Map<String, Host> hosts) {
         this.hosts = hosts;
     }
 

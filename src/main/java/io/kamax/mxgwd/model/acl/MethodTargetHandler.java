@@ -20,15 +20,15 @@
 
 package io.kamax.mxgwd.model.acl;
 
+import io.kamax.mxgwd.config.matrix.Acl;
 import io.kamax.mxgwd.config.matrix.AclType;
-import io.kamax.mxgwd.config.matrix.MatrixAcl;
-import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
+import io.kamax.mxgwd.config.matrix.Endpoint;
 import io.kamax.mxgwd.model.Exchange;
 import org.apache.commons.lang3.StringUtils;
 
 public class MethodTargetHandler implements AclTargetHandler {
 
-    public boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl) {
+    public boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl) {
         boolean isMethod = StringUtils.equals(acl.getValue(), ex.getRequest().getMethod());
 
         if (AclType.Blacklist.is(acl) && isMethod)

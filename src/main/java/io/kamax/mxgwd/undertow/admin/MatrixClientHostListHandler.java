@@ -18,14 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model.acl;
+package io.kamax.mxgwd.undertow.admin;
 
-import io.kamax.mxgwd.config.matrix.Acl;
-import io.kamax.mxgwd.config.matrix.Endpoint;
-import io.kamax.mxgwd.model.Exchange;
+import com.google.gson.JsonArray;
+import io.kamax.matrix.json.GsonUtil;
+import io.kamax.mxgwd.config.Config;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
+import io.undertow.server.HttpServerExchange;
 
-public interface AclTargetHandler {
+public class MatrixClientHostListHandler extends HttpServerExchangeHandler {
 
-    boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl);
+    private Config cfg;
+
+    public MatrixClientHostListHandler(Config cfg) {
+        this.cfg = cfg;
+    }
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) {
+        JsonArray hosts = new JsonArray();
+        cfg.getMatrix().getClient().getHosts().forEach((key, value) -> hosts.add(key));
+        sendJsonResponse(exchange, GsonUtil.makeObj("hosts", hosts));
+    }
 
 }

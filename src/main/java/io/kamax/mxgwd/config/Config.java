@@ -20,6 +20,7 @@
 
 package io.kamax.mxgwd.config;
 
+import io.kamax.mxgwd.config.admin.Admin;
 import io.kamax.mxgwd.config.matrix.Matrix;
 import io.kamax.mxgwd.config.server.Server;
 
@@ -27,6 +28,8 @@ public class Config {
 
     private Matrix matrix;
     private Server server;
+    private Admin admin;
+    private Storage storage;
 
     public Matrix getMatrix() {
         return Value.get(matrix, Matrix::new);
@@ -42,6 +45,22 @@ public class Config {
 
     public void setServer(Server server) {
         this.server = server;
+    }
+
+    public Admin getAdmin() {
+        return Value.get(admin, Admin::new);
+    }
+
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
+    }
+
+    public Storage getStorage() {
+        return Value.get(storage, Storage::new);
+    }
+
+    public void setStorage(Storage storage) {
+        this.storage = storage;
     }
 
 }

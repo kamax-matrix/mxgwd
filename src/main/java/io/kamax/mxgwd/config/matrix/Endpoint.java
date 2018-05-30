@@ -26,14 +26,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MatrixEndpoint {
+public class Endpoint {
 
     private String method;
     private String path;
     private String match;
     private String action;
     private URL to;
-    private List<MatrixAcl> acls;
+    private List<Acl> acls;
 
     public String getMethod() {
         return method;
@@ -75,11 +75,11 @@ public class MatrixEndpoint {
         this.to = to;
     }
 
-    public List<MatrixAcl> getAcls() {
+    public List<Acl> getAcls() {
         return Value.get(acls, ArrayList::new);
     }
 
-    public void setAcls(List<MatrixAcl> acls) {
+    public void setAcls(List<Acl> acls) {
         this.acls = acls;
     }
 

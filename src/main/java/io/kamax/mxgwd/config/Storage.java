@@ -18,14 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model.acl;
+package io.kamax.mxgwd.config;
 
-import io.kamax.mxgwd.config.matrix.Acl;
-import io.kamax.mxgwd.config.matrix.Endpoint;
-import io.kamax.mxgwd.model.Exchange;
+public class Storage {
 
-public interface AclTargetHandler {
+    private String type;
+    private String location;
 
-    boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl);
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
 
 }

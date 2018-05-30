@@ -20,15 +20,15 @@
 
 package io.kamax.mxgwd.model.acl;
 
+import io.kamax.mxgwd.config.matrix.Acl;
 import io.kamax.mxgwd.config.matrix.AclType;
-import io.kamax.mxgwd.config.matrix.MatrixAcl;
-import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
+import io.kamax.mxgwd.config.matrix.Endpoint;
 import io.kamax.mxgwd.model.Exchange;
 
 public class GroupTargetHandler implements AclTargetHandler {
 
     @Override
-    public boolean isAllowed(Exchange ex, MatrixEndpoint endpoint, MatrixAcl acl) {
+    public boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl) {
         return ex.getContext().getRoles().map(list -> {
             if (AclType.Blacklist.is(acl) && list.contains(acl.getValue()))
                 return false;

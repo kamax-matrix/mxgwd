@@ -24,30 +24,51 @@ import io.kamax.mxgwd.config.Config;
 import io.kamax.mxgwd.config.Value;
 import io.kamax.mxgwd.config.yaml.YamlConfigLoader;
 import io.kamax.mxgwd.model.Gateway;
+import io.kamax.mxgwd.undertow.admin.MatrixClientEntityInsertHandler;
+import io.kamax.mxgwd.undertow.admin.MatrixClientEntityListHandler;
+import io.kamax.mxgwd.undertow.admin.MatrixClientHostListHandler;
+import io.kamax.mxgwd.undertow.matrix.client.ActivePoliciesListingHandler;
+import io.kamax.mxgwd.undertow.matrix.client.CatchAllHandler;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.handlers.BlockingHandler;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
 public class UndertowApp {
 
-    public static void main(String[] args) throws IOException {
-        String cfgFile = StringUtils.defaultIfBlank(System.getenv("MXGWD_CONFIG_FILE"), "mxgwd.yaml");
-        Config cfg = Value.get(YamlConfigLoader.loadFromFile(cfgFile), Config::new);
-        Gateway gw = new Gateway(cfg);
+    public static void main(String[] args) {
+        try {
+            String cfgFile = StringUtils.defaultIfBlank(System.getenv("MXGWD_CONFIG_FILE"), "mxgwd.yaml");
+            Config cfg = Value.get(YamlConfigLoader.loadFromFile(cfgFile), Config::new);
+            Gateway gw = new Gateway(cfg);
 
-        CatchAllHandler allHandler = new CatchAllHandler(gw);
-        ActivePoliciesListingHandler activePolicies = new ActivePoliciesListingHandler(gw);
+            HttpHandler allHandler = new BlockingHandler(new CatchAllHandler(gw));
+            HttpHandler activePolicies = new BlockingHandler(new ActivePoliciesListingHandler(gw));
 
-        Undertow server = Undertow.builder()
-                .addHttpListener(cfg.getServer().getPort(), "0.0.0.0")
-                .setHandler(Handlers.path()
-                        .addExactPath("/_matrix/client/r0/policy/policies", activePolicies)
-                        .addPrefixPath("/", allHandler))
-                .build();
+            Undertow gwSrv = Undertow.builder()
+                    .addHttpListener(cfg.getServer().getPort(), "0.0.0.0")
+                    .setHandler(Handlers.path()
+                            .addExactPath("/_matrix/client/r0/policy/policies", activePolicies)
+                            .addPrefixPath("/", allHandler))
+                    .build();
 
-        server.start();
+            gwSrv.start();
+
+            Undertow adminSrv = Undertow.builder()
+                    .addHttpListener(cfg.getAdmin().getPort(), "0.0.0.0")
+                    .setHandler(Handlers.routing()
+                            .add("GET", "/admin/api/v1/matrix/client/hosts", new BlockingHandler(new MatrixClientHostListHandler(cfg)))
+                            .add("GET", "/admin/api/v1/matrix/client/hosts/{host}/entities", new BlockingHandler(new MatrixClientEntityListHandler(gw)))
+                            .add("PUT", "/admin/api/v1/matrix/client/hosts/{host}/entities", new BlockingHandler(new MatrixClientEntityInsertHandler(gw)))
+                    ).build();
+            adminSrv.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
 }

@@ -18,36 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.config.matrix;
+package io.kamax.mxgwd.storage;
 
-public class MatrixAcl {
+import io.kamax.mxgwd.config.matrix.EntityIO;
 
-    private String type;
-    private String target;
-    private String value;
+import java.util.List;
+import java.util.Optional;
 
-    public String getType() {
-        return type;
-    }
+public interface Store {
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    Optional<EntityIO> findEntity(long id);
 
-    public String getTarget() {
-        return target;
-    }
+    EntityIO insertEntity(EntityIO io);
 
-    public void setTarget(String target) {
-        this.target = target;
-    }
+    void updateEntity(EntityIO io);
 
-    public String getValue() {
-        return value;
-    }
+    void deleteEntity(long id);
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+    List<EntityIO> findEntity(EntityIO filter);
 
 }

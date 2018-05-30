@@ -18,31 +18,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.undertow;
+package io.kamax.mxgwd.undertow.admin;
 
+import io.kamax.matrix.json.GsonUtil;
+import io.kamax.mxgwd.config.matrix.EntityIO;
+import io.kamax.mxgwd.model.Entity;
 import io.kamax.mxgwd.model.Gateway;
 import io.kamax.mxgwd.model.Request;
-import io.kamax.mxgwd.model.Response;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
 import io.undertow.server.HttpServerExchange;
 
-public class ActivePoliciesListingHandler extends HttpServerExchangeHandler {
+import java.io.IOException;
+import java.util.Objects;
+
+public class MatrixClientEntityInsertHandler extends HttpServerExchangeHandler {
 
     private Gateway gw;
 
-    public ActivePoliciesListingHandler(Gateway gw) {
+    public MatrixClientEntityInsertHandler(Gateway gw) {
         this.gw = gw;
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (exchange.isInIoThread()) {
-            exchange.dispatch(this);
-            return;
+    public void handleRequest(HttpServerExchange exchange) throws IOException {
+        Request req = extract(exchange);
+        EntityIO io = GsonUtil.get().fromJson(new String(req.getBody()), EntityIO.class);
+        if (Objects.isNull(io.getId())) {
+            Entity e = gw.createEntity(io);
+            sendJsonResponse(exchange, GsonUtil.makeObj("id", e.getId()));
+        } else {
+            Entity e = gw.getEntity(io.getId());
+            e.setAclType(io.getAclType());
+            sendJsonResponse(exchange, "{}");
         }
 
-        Request req = extract(exchange);
-        Response response = gw.getEffectivePolicies(req);
-        sendResponse(exchange, response);
     }
 
 }

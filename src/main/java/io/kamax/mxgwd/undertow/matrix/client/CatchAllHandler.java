@@ -18,10 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.undertow;
+package io.kamax.mxgwd.undertow.matrix.client;
 
+import com.google.gson.JsonObject;
+import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.model.Gateway;
 import io.kamax.mxgwd.model.Request;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
@@ -35,11 +38,6 @@ public class CatchAllHandler extends HttpServerExchangeHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) {
-        if (exchange.isInIoThread()) {
-            exchange.dispatch(this);
-            return;
-        }
-
         try {
             exchange.getRequestReceiver().receiveFullBytes((exchange1, message) -> {
                 try {
@@ -52,11 +50,16 @@ public class CatchAllHandler extends HttpServerExchangeHandler {
                     throw new RuntimeException(e);
                 }
             });
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
+
+            JsonObject body = new JsonObject();
+            body.addProperty("errcode", "M_UNKNOWN");
+            body.addProperty("error", "Internal Server Error");
+            body.addProperty("error_internal", e.getMessage());
             exchange.getResponseHeaders().put(HttpString.tryFromString("Server"), "mxgwd");
             exchange.setStatusCode(500);
-            exchange.getResponseSender().send("Internal Server Error");
+            exchange.getResponseSender().send(GsonUtil.get().toJson(body));
         } finally {
             exchange.endExchange();
         }

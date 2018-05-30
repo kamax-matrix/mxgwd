@@ -20,20 +20,23 @@
 
 package io.kamax.mxgwd.undertow;
 
+import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxgwd.model.Request;
 import io.kamax.mxgwd.model.Response;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.commons.io.IOUtils;
 
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public abstract class HttpServerExchangeHandler implements HttpHandler {
 
-    protected Request extract(HttpServerExchange exchange) throws MalformedURLException {
+    protected Request extract(HttpServerExchange exchange) throws IOException {
         Request reqOut = new Request();
 
         reqOut.setMethod(exchange.getRequestMethod().toString());
@@ -51,6 +54,8 @@ public abstract class HttpServerExchangeHandler implements HttpHandler {
         });
         reqOut.setQuery(parameters);
 
+        reqOut.setBody(IOUtils.toString(exchange.getInputStream(), StandardCharsets.UTF_8).getBytes());
+
         return reqOut;
     }
 
@@ -67,6 +72,21 @@ public abstract class HttpServerExchangeHandler implements HttpHandler {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void sendJsonResponse(HttpServerExchange exchange, String body) {
+        exchange.setStatusCode(200);
+        exchange.getResponseHeaders().add(HttpString.tryFromString("Content-Type"), "application/json");
+        exchange.setResponseContentLength(body.length());
+        exchange.getResponseSender().send(ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    protected void sendJsonResponse(HttpServerExchange exchange, Object o) {
+        sendJsonResponse(exchange, GsonUtil.get().toJson(o));
+    }
+
+    protected String getParameter(HttpServerExchange exchange, String name) {
+        return exchange.getQueryParameters().get(name).getFirst();
     }
 
 }

@@ -21,11 +21,33 @@
 package io.kamax.mxgwd.model.acl;
 
 import io.kamax.mxgwd.config.matrix.Acl;
+import io.kamax.mxgwd.config.matrix.AclType;
 import io.kamax.mxgwd.config.matrix.Endpoint;
 import io.kamax.mxgwd.model.Exchange;
+import org.apache.commons.lang3.StringUtils;
 
-public interface AclTargetHandler {
+import java.util.Objects;
 
-    boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl);
+public class UserTargetHandler implements AclTargetHandler {
+
+    public boolean isMatch(Exchange ex, Acl acl) {
+        return StringUtils.equals(acl.getValue(), ex.getContext().getUser().getId());
+    }
+
+    public boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl) {
+        if (Objects.isNull(ex.getContext().getUser())) {
+            return true;
+        }
+
+        boolean isMatch = isMatch(ex, acl);
+
+        if (AclType.Blacklist.is(acl) && isMatch)
+            return false;
+
+        if (AclType.Whitelist.is(acl) && !isMatch)
+            return false;
+
+        return true;
+    }
 
 }

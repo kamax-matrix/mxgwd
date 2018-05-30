@@ -74,6 +74,10 @@ dependencies {
     compile 'io.undertow:undertow-core:2.0.1.Final'
     compile 'io.kamax:matrix-java-sdk:0.0.9'
 
+    // DB
+    compile 'com.j256.ormlite:ormlite-jdbc:5.0'
+    compile 'org.xerial:sqlite-jdbc:3.20.0'
+
     testCompile 'junit:junit:4.12'
 }
 

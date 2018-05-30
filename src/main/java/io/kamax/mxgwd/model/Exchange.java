@@ -20,8 +20,8 @@
 
 package io.kamax.mxgwd.model;
 
-import io.kamax.mxgwd.config.matrix.MatrixEndpoint;
-import io.kamax.mxgwd.config.matrix.MatrixHost;
+import io.kamax.mxgwd.config.matrix.Endpoint;
+import io.kamax.mxgwd.config.matrix.Host;
 
 import java.util.Optional;
 
@@ -32,10 +32,10 @@ public class Exchange {
 
     private Context context;
     private String hostname;
-    private MatrixHost host;
-    private MatrixEndpoint endpoint;
+    private Host host;
+    private Endpoint endpoint;
 
-    public Exchange(Request request, Context context, String hostname, MatrixHost host) {
+    public Exchange(Request request, Context context, String hostname, Host host) {
         this.request = request;
         this.context = context;
         this.hostname = hostname;
@@ -62,15 +62,15 @@ public class Exchange {
         return hostname;
     }
 
-    public MatrixHost getHost() {
+    public Host getHost() {
         return host;
     }
 
-    public Optional<MatrixEndpoint> getEndpoint() {
+    public Optional<Endpoint> getEndpoint() {
         return Optional.ofNullable(endpoint);
     }
 
-    public void setEndpoint(MatrixEndpoint endpoint) {
+    public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
     }
 

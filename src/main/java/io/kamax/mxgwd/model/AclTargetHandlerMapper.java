@@ -23,6 +23,7 @@ package io.kamax.mxgwd.model;
 import io.kamax.mxgwd.model.acl.AclTargetHandler;
 import io.kamax.mxgwd.model.acl.GroupTargetHandler;
 import io.kamax.mxgwd.model.acl.MethodTargetHandler;
+import io.kamax.mxgwd.model.acl.UserTargetHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,7 @@ public class AclTargetHandlerMapper {
         handlers = new HashMap<>();
         handlers.put("method", new MethodTargetHandler());
         handlers.put("group", new GroupTargetHandler());
+        handlers.put("user", new UserTargetHandler());
     }
 
     public Optional<AclTargetHandler> map(String id) {

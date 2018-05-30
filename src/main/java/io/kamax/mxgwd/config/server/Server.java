@@ -27,7 +27,7 @@ public class Server {
     private Integer port;
 
     public Integer getPort() {
-        return Value.get(port, 8007);
+        return Value.get(port, 8000);
     }
 
     public void setPort(Integer port) {

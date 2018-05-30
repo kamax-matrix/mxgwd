@@ -18,14 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model.acl;
+package io.kamax.mxgwd.undertow.matrix.client;
 
-import io.kamax.mxgwd.config.matrix.Acl;
-import io.kamax.mxgwd.config.matrix.Endpoint;
-import io.kamax.mxgwd.model.Exchange;
+import io.kamax.mxgwd.model.Gateway;
+import io.kamax.mxgwd.model.Request;
+import io.kamax.mxgwd.model.Response;
+import io.kamax.mxgwd.undertow.HttpServerExchangeHandler;
+import io.undertow.server.HttpServerExchange;
 
-public interface AclTargetHandler {
+public class ActivePoliciesListingHandler extends HttpServerExchangeHandler {
 
-    boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl);
+    private Gateway gw;
+
+    public ActivePoliciesListingHandler(Gateway gw) {
+        this.gw = gw;
+    }
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        Request req = extract(exchange);
+        Response response = gw.getEffectivePolicies(req);
+        sendResponse(exchange, response);
+    }
 
 }

@@ -18,14 +18,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxgwd.model.acl;
+package io.kamax.mxgwd.config.admin;
 
-import io.kamax.mxgwd.config.matrix.Acl;
-import io.kamax.mxgwd.config.matrix.Endpoint;
-import io.kamax.mxgwd.model.Exchange;
+public class Admin {
 
-public interface AclTargetHandler {
+    private int port = 8880;
 
-    boolean isAllowed(Exchange ex, Endpoint endpoint, Acl acl);
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
 
 }
