@@ -220,7 +220,7 @@ public class Gateway {
     }
 
     private boolean isAllowed(Exchange ex) {
-        return ex.getEndpoint().map(endpoint -> {
+        return ex.getEndpoints().stream().allMatch(endpoint -> {
             for (Acl acl : endpoint.getAcls()) {
                 if (!getAclTargetHandler(acl.getTarget()).isAllowed(
                         ex,
@@ -232,7 +232,7 @@ public class Gateway {
             }
 
             return true;
-        }).orElse(Objects.nonNull(ex.getHost().getTo()));
+        });
     }
 
     private Exchange buildExchange(Request request, Host mxHost) {
@@ -287,7 +287,7 @@ public class Gateway {
                 .forEach(entity -> endpoints.addAll(entityMapper.map(entity)));
         endpoints.addAll(mxHost.getEndpoints());
 
-        // We try to find a matching raw endpoint
+        // We try to find a matching endpoints
         for (Endpoint endpoint : endpoints) {
             boolean pathMatch;
             String path = decode(request.getUrl().getPath());
@@ -301,13 +301,11 @@ public class Gateway {
             boolean methodMatch = methodBlank || StringUtils.equals(endpoint.getMethod(), request.getMethod());
 
             if (!pathMatch || !methodMatch) {
-                log.info("Endpoint {}:{} is not a match", endpoint.getMethod(), endpoint.getPath());
                 continue;
             }
 
             log.info("Endpoint {}:{} is a match", endpoint.getMethod(), endpoint.getPath());
-            ex.setEndpoint(endpoint);
-            break;
+            ex.addEndpoint(endpoint);
         }
 
         return ex;
@@ -319,7 +317,7 @@ public class Gateway {
 
     private Response proxyRequest(Exchange ex) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(ex.getRequest().getUrl().toString());
-        URL targetHost = ex.getEndpoint().map(Endpoint::getTo).orElse(ex.getHost().getTo());
+        URL targetHost = ex.getEndpoints().stream().findFirst().map(Endpoint::getTo).orElse(ex.getHost().getTo());
         b.setScheme(targetHost.getProtocol());
         b.setHost(targetHost.getHost());
         if (targetHost.getPort() != -1) {

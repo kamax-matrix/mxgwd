@@ -40,14 +40,11 @@ public class UserTargetHandler implements AclTargetHandler {
         }
 
         boolean isMatch = isMatch(ex, acl);
+        if (!isMatch) {
+            return true;
+        }
 
-        if (AclType.Blacklist.is(acl) && isMatch)
-            return false;
-
-        if (AclType.Whitelist.is(acl) && !isMatch)
-            return false;
-
-        return true;
+        return AclType.Whitelist.is(acl);
     }
 
 }

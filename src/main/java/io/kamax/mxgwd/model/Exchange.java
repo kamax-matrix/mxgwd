@@ -23,7 +23,8 @@ package io.kamax.mxgwd.model;
 import io.kamax.mxgwd.config.matrix.Endpoint;
 import io.kamax.mxgwd.config.matrix.Host;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Exchange {
 
@@ -33,7 +34,7 @@ public class Exchange {
     private Context context;
     private String hostname;
     private Host host;
-    private Endpoint endpoint;
+    private List<Endpoint> endpoints = new ArrayList<>();
 
     public Exchange(Request request, Context context, String hostname, Host host) {
         this.request = request;
@@ -66,12 +67,12 @@ public class Exchange {
         return host;
     }
 
-    public Optional<Endpoint> getEndpoint() {
-        return Optional.ofNullable(endpoint);
+    public List<Endpoint> getEndpoints() {
+        return endpoints;
     }
 
-    public void setEndpoint(Endpoint endpoint) {
-        this.endpoint = endpoint;
+    public void addEndpoint(Endpoint endpoint) {
+        endpoints.add(endpoint);
     }
 
 }
