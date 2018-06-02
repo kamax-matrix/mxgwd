@@ -317,7 +317,11 @@ public class Gateway {
 
     private Response proxyRequest(Exchange ex) throws URISyntaxException, IOException {
         URIBuilder b = new URIBuilder(ex.getRequest().getUrl().toString());
-        URL targetHost = ex.getEndpoints().stream().findFirst().map(Endpoint::getTo).orElse(ex.getHost().getTo());
+        URL targetHost = ex.getEndpoints().stream()
+                .filter(ep -> Objects.nonNull(ep.getTo()))
+                .findFirst()
+                .map(Endpoint::getTo)
+                .orElse(ex.getHost().getTo());
         b.setScheme(targetHost.getProtocol());
         b.setHost(targetHost.getHost());
         if (targetHost.getPort() != -1) {
