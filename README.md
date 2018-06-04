@@ -88,7 +88,7 @@ This ACL type will deny access if one of the following conditions is true:
 - Reverse proxy for TLS/SSL support
 
 ### Reverse Proxy
-By default, the gateway will listen on port `8007` of all IPs. To change, add the following line to your config file:
+By default, the gateway will listen on port `8000` of all IPs. To change, add the following line to your config file:
 ```yaml
 server.port: <HTTP port to listen to>
 ```
@@ -101,7 +101,7 @@ hostname/IP pointing to the gateway.
 
 **This line MUST replace the one for the homeserver and MUST be after the one to your Identity server, if applicable.**
 ```
-ProxyPass /_matrix http://0.0.0.0:8007/_matrix
+ProxyPass /_matrix http://0.0.0.0:8000/_matrix
 ```
 
 Typical configuration would look like:
@@ -113,7 +113,7 @@ Typical configuration would look like:
     ProxyPreserveHost on
     ...
     
-    ProxyPass /_matrix http://localhost:8007/_matrix
+    ProxyPass /_matrix http://localhost:8000/_matrix
 </VirtualHost>
 ```
 
@@ -125,7 +125,7 @@ hostname/IP pointing to gateway.
 
 ```
 location /_matrix {
-    proxy_pass http://0.0.0.0:8007/_matrix;
+    proxy_pass http://0.0.0.0:8000/_matrix;
 }
 ```
 
@@ -138,7 +138,7 @@ server {
     ...
     
     location /_matrix {
-        proxy_pass http://localhost:8007/_matrix;
+        proxy_pass http://localhost:8000/_matrix;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $remote_addr;
     }
