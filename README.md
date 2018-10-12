@@ -1,5 +1,5 @@
 # mxgwd - Matrix Policy Gateway Daemon
-[![Build Status](https://travis-ci.org/kamax-io/mxgwd.svg?branch=master)](https://travis-ci.org/kamax-io/mxgwd)
+[![Build Status](https://travis-ci.org/kamax-matrix/mxgwd.svg?branch=master)](https://travis-ci.org/kamax-matrix/mxgwd)
 
 - [Overview](#overview)
 - [Concepts](#concepts)
