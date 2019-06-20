@@ -1,10 +1,17 @@
 # mxgwd - Matrix Policy Gateway Daemon
 [![Build Status](https://travis-ci.org/kamax-matrix/mxgwd.svg?branch=master)](https://travis-ci.org/kamax-matrix/mxgwd)
 
+---
+
+**This project is no longer maintained.**
+
+---
+
 - [Overview](#overview)
 - [Concepts](#concepts)
 - [Getting Started](#getting-started)
-- [Support](#support)
+
+
 
 ## Overview
 mxgwd is a gateway/reverse proxy for the Matrix REST API that aims to:
@@ -72,9 +79,9 @@ The HTTP method value (e.g. `GET`, `POST`, etc.), if the provided value is a mat
 
 ##### Authenticated user's groups
 With: `group`
-  
+
 The groups the authenticated user belongs to, if the provided value matches one of the groups in the list.
-  
+
 This ACL type will deny access if one of the following conditions is true:
 - The client did not provide an access token
 - The Gateway is unable to validate the access token
@@ -240,10 +247,3 @@ All other requests to any other host will be denied.
 # Run mxgwd 
 java -jar build/libs/mxgwd.jar
 ```
-
-## Support
-### Community
-Matrix room: [#mxgwd:kamax.io](https://matrix.to/#/#mxgwd:kamax.io)
-
-### Commercial
-See the [contact page](https://www.kamax.io/page/contact/) on our website.
